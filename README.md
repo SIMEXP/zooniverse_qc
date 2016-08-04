@@ -19,7 +19,7 @@ For overall QC **Status** three values are acceptable:
 
 #### T1 normalisation
 #### *Brain segmentation - Spatial normalisation*
-![](https://raw.githubusercontent.com/yassinebha/zooniverse_QC/master/fig_qc_t1.png)
+![](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/fig_qc_t1.png?raw=true)
 
 The anatomical landmarks that should be well aligned in a successful coregistration include: central sulcus (**A**), cingulate sulcus (**B**), parieto-occipital fissure (**C**), calcarine fissure (**D**), tentorium cerebellum (**E**), the lateral ventricles (**F**), the outline of the brain (**G**) and the hippocampal formation (**H**) bilateraly. The landmarks are outlined on an individual brain after successful non-linear coregistration in stereotaxic space.
 
@@ -30,13 +30,13 @@ The most frequent issues related to brain segmentation and spatial normalisation
 #####  [Failed Case](http://simexp.github.io/adhd200_qc_niak/wrapper_X0010032.html)
 
 
-![Epic Fail](https://github.com/yassinebha/zooniverse_QC/blob/master/Fig_anat_MR_fail/morph_X_0010032_anat_template_target.gif?raw=true)
+![Epic Fail](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_anat_MR_fail/morph_X_0010032_anat_template_target.gif?raw=true)
 
 #####  [Maybe Case](http://simexp.github.io/adhd200_qc_niak/wrapper_X0021005.html)
-![maybe case](https://github.com/yassinebha/zooniverse_QC/blob/master/Fig_anat_MR_maybe/morph_X_0021005_anat_template_target.gif?raw=true)
+![maybe case](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_anat_MR_maybe/morph_X_0021005_anat_template_target.gif?raw=true)
 
 #####  [OK Case](http://simexp.github.io/adhd200_qc_athena/wrapper_X0021005.html)
 
 #### T2* normalisation
 #### *Brain segmentation - Spatial normalisation*
-![](https://github.com/yassinebha/zooniverse_QC/blob/master/fig_qc_t2.png?raw=true)
+![](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/fig_qc_t2.png?raw=true)
