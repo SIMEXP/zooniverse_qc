@@ -17,7 +17,7 @@ function [in,out,opt] = niak_brick_vol2img(in,out,opt)
 %   This is purely an output parameter.
 % OPT.LIMITS (vector 1x2) the limits for the colormap. By defaut it is using [min,max].
 %    If a string is specified, the function will implement an adaptative strategy. 
-% FLAG_DECORATION (boolean, default true) if the flag is true, produce a regular figure
+% OPT.FLAG_DECORATION (boolean, default true) if the flag is true, produce a regular figure
 %    with axis, title and colorbar. Otherwise just output the plain mosaic.
 % OPT.FLAG_TEST (boolean, default false) if the flag is true, the brick does nothing but 
 %    update IN, OUT and OPT.

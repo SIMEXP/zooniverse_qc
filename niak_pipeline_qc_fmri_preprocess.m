@@ -13,7 +13,13 @@ function pipe = niak_pipeline_qc_fmri_preprocess(in,opt)
 % OPT.COORD       (array N x 3) Coordinates for the figure. The default is:
 %                               [-30 , -65 , -15 ; 
 %                                  -8 , -25 ,  10 ;  
-%                                 30 ,  45 ,  60];    
+%                                 30 ,  45 ,  60];
+% OPT.FLAG_DECORATION (boolean, default true) if the flag is true, produce a regular figure
+%    with axis, title and colorbar. Otherwise just output the plain mosaic. 
+% OPT.GIF
+%    structure with the folowing fields:
+%    RATIO (float,  default 0.6) it reduce image size, numbers can range from 0.1 to 1
+%    ALPHA (integer, default 3) Number of transition frames betwenen to images to build the gif animation
 % OPT.PSOM (structure) options for PSOM. See PSOM_RUN_PIPELINE.
 % OPT.FLAG_VERBOSE (boolean, default true) if true, verbose on progress. 
 % OPT.FLAG_TEST (boolean, default false) if the flag is true, the pipeline will 
@@ -77,8 +83,8 @@ coord_def =[-30 , -65 , -15 ;
                       -8 , -25 ,  10 ;  
                      30 ,  45 ,  60];
 opt = psom_struct_defaults ( opt , ...
-    { 'folder_out' , 'coord'      , 'flag_test' , 'psom'   , 'flag_verbose' }, ...
-    { pwd            , coord_def , false         , struct() , true                 });
+    { 'folder_out' , 'coord'      , 'flag_decoration', 'gif'    , 'flag_test' , 'psom'   , 'flag_verbose' }, ...
+    { pwd          , coord_def    , true             , struct() , false       , struct() , true           });
 
 opt.folder_out = niak_full_path(opt.folder_out);
 opt.psom.path_logs = [opt.folder_out 'logs' filesep];
@@ -93,6 +99,7 @@ outj.func = 'gb_niak_omitted';
 outj.template = [opt.folder_out 'summary_template.jpg'];
 outj.report =  'gb_niak_omitted';
 optj.coord = opt.coord;
+optj.flag_decoration = opt.flag_decoration;
 optj.id = 'MNI152';
 pipe = psom_add_job(pipe,'summary_template','niak_brick_qc_fmri_preprocess',inj,outj,optj);
 
@@ -101,7 +108,7 @@ for ss = 1:length(list_subject)
     clear inj outj optj
     subject = list_subject{ss};
     if opt.flag_verbose
-        fprintf('Adding job: QC report for subject %s\n',subject);
+       fprintf('Adding job: QC report for subject %s\n',subject);
     end
     inj.anat = in.anat.(subject);
     inj.func = in.func.(subject);
@@ -111,10 +118,40 @@ for ss = 1:length(list_subject)
     outj.template = 'gb_niak_omitted';
     outj.report =  [opt.folder_out 'report_coregister_' subject '.html'];
     optj.coord = opt.coord;
+    optj.flag_decoration = opt.flag_decoration;
+    optj.id = subject;
+    optj.template = pipe.summary_template.files_out.template;
+    pipe = psom_add_job(pipe,['report_' subject],'niak_brick_qc_fmri_preprocess',inj,outj,optj);
+    
+    %% Add gif figure for zooniverse platform
+    if sum(isfield (opt.gif,{'alpha','ratio'})) >= 1
+       
+        
+    
+end
+
+
+%% Add gif figure for zooniverse platform
+for ss = 1:length(list_subject)
+    clear inj outj optj
+    subject = list_subject{ss};
+    if opt.flag_verbose
+       fprintf('Adding job: GIF images for subject %s\n',subject);
+    end
+    inj.anat = in.anat.(subject);
+    inj.func = in.func.(subject);
+    inj.template = in.template;
+    outj.anat = [opt.folder_out 'summary_' subject '_anat.jpg'];
+    outj.func = [opt.folder_out 'summary_' subject '_func.jpg'];
+    outj.template = 'gb_niak_omitted';
+    outj.report =  [opt.folder_out 'report_coregister_' subject '.html'];
+    optj.coord = opt.coord;
+    optj.flag_decoration = opt.flag_decoration;
     optj.id = subject;
     optj.template = pipe.summary_template.files_out.template;
     pipe = psom_add_job(pipe,['report_' subject],'niak_brick_qc_fmri_preprocess',inj,outj,optj);
 end
+
 
 %% Add a spreadsheet to write the QC. 
 clear inj outj optj
