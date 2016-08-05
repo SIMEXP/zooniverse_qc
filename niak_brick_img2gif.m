@@ -47,7 +47,7 @@ in = psom_struct_defaults( in , ...
     { NaN    , NaN });
     
 if nargin < 2 
-   warning( 'output filename specified: we will use the current directory : s%/out_img2gif.gif n\',pwd) 
+   warning( 'output and filename not specified: we will use the current directory : s%/out_img2gif.gif n\',pwd) 
    out = 'out_img2gif.gif';
 end  
 opt = psom_struct_defaults ( opt , ...
