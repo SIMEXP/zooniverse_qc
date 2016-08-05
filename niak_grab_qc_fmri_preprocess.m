@@ -61,12 +61,12 @@ opt = psom_struct_defaults( opt , ...
     
 %% List of folders
 path_anat  = [path_data 'anat' filesep];
-path_qc    = [path_data 'quality_control' filesep];
-if ~exist(path_anat,'dir')||~exist(path_qc,'dir')
+if ~exist(path_anat,'dir')
     error('The specified folder does not contain some expected outputs from the fMRI preprocess (anat ; quality_control)')
 end
 
 %% Check the format of the data
+ext = '';
 file_aal = [path_anat 'template_aal.mnc'];
 if psom_exist(file_aal)
     ext = '.mnc';
@@ -87,6 +87,12 @@ if psom_exist(file_aal)
     ext = '.nii.gz';
 end
 
+if isempty(ext)
+   sample_file = {dir([path_anat filesep '*/*.*']).name}{1};
+   [path_f,name_f,ext_f,flag_zip,ext_short] = niak_fileparts([path_anat filesep sample_file]);
+   ext = ext_f;
+end
+   
 %% Grab the list of subjects
 list_qc = dir(path_anat);
 list_qc = {list_qc.name};
