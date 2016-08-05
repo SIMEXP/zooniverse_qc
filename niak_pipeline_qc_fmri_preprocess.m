@@ -161,14 +161,14 @@ for ss = 1:length(list_subject)
        % Manifest file creation
       if ss == 1 
          tab{ss,1} = [subject '_anat'] ;
-         tab{ss,2} = [path_gif 'summary_' subject '_anat2template.gif'];
+         tab{ss,2} = [ 'summary_' subject '_anat2template.gif'];
          tab{ss+1,1} = [subject '_func'];
-         tab{ss+1,2} = [path_gif 'summary_' subject '_func2anat.gif'];
+         tab{ss+1,2} = [ 'summary_' subject '_func2anat.gif'];
       else
          tab{ss+n_shift,1} = [subject '_anat'] ;
-         tab{ss+n_shift,2} = [path_gif 'summary_' subject '_anat2template.gif'];
+         tab{ss+n_shift,2} = [ 'summary_' subject '_anat2template.gif'];
          tab{ss+n_shift+1,1} = [subject '_func'] ;
-         tab{ss+n_shift+1,2} = [path_gif 'summary_' subject '_func2anat.gif'];
+         tab{ss+n_shift+1,2} = [ 'summary_' subject '_func2anat.gif'];
       end
       n_shift = n_shift+1;
     end
