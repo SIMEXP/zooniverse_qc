@@ -16,7 +16,9 @@ function [in,out,opt] = niak_brick_qc_fmri_preprocess(in,out,opt)
 % OPT.COORD       (array N x 3) Coordinates for the figure. The default is:
 %                               [-30 , -65 , -15 ; 
 %                                  -8 , -25 ,  10 ;  
-%                                 30 ,  45 ,  60];    
+%                                 30 ,  45 ,  60];
+% OPT.FLAG_DECORATION (boolean, default true) if the flag is true, produce a regular figure
+%    with axis, title and colorbar. Otherwise just output the plain mosaic.    
 % OPT.TEMPLATE (string) if specified, this file name will be used in the report
 %   instead of OUT.TEMPLATE.
 % OPT.FLAG_VERBOSE (boolean, default true) if true, verbose on progress. 
@@ -69,12 +71,12 @@ out = psom_struct_defaults( out , ...
 if nargin < 3
     opt = struct;
 end
-coord_def =[-30 , -65 , -15 ; 
-                      -8 , -25 ,  10 ;  
-                     30 ,  45 ,  60];
+coord_def =[-30 , -65 , -15 ;... 
+            -8 , -25 ,  10 ;... 
+            30 ,  45 ,  60];
 opt = psom_struct_defaults ( opt , ...
-    { 'folder_out' , 'coord'      , 'flag_test' , 'id'                 , 'template' , 'flag_verbose' }, ...
-    { pwd            , coord_def , false         , 'anonymous' , ''               , true                 });
+    { 'folder_out' , 'coord'   , 'flag_decoration' , 'flag_test' , 'id'          , 'template' , 'flag_verbose' }, ...
+    { pwd          , coord_def , true              , false       , 'anonymous'   , ''         , true           });
 
 opt.folder_out = niak_full_path(opt.folder_out);
 
@@ -109,6 +111,7 @@ if ~strcmp(out.anat,'gb_niak_omitted')
     in_v.target = in.template;
     out_v = out.anat;
     opt_v.coord = opt.coord;
+    opt_v.flag_decoration = opt.flag_decoration;
     opt_v.colorbar = false;
     opt_v.colormap = 'gray';
     opt_v.limits = 'adaptative';
@@ -126,6 +129,7 @@ if ~strcmp(out.template,'gb_niak_omitted')
     out_v = out.template;
     opt_v.coord = opt.coord;
     opt_v.colorbar = false;
+    opt_v.flag_decoration = opt.flag_decoration;
     opt_v.colormap = 'gray';
     opt_v.limits = 'adaptative';
     opt_v.title = sprintf('       template, %s',opt.id);
@@ -141,6 +145,7 @@ if ~strcmp(out.func,'gb_niak_omitted')
     in_v.target = in.template;
     out_v = out.func;
     opt_v.coord = opt.coord;
+    opt_v.flag_decoration = opt.flag_decoration;
     opt_v.colorbar = false;
     opt_v.colormap = 'jet';
     opt_v.limits = 'adaptative';

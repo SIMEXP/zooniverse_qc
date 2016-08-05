@@ -20,6 +20,7 @@ function pipe = niak_pipeline_qc_fmri_preprocess(in,opt)
 %    structure with the folowing fields:
 %    RATIO (float,  default 0.6) it reduce image size, numbers can range from 0.1 to 1
 %    ALPHA (integer, default 3) Number of transition frames betwenen to images to build the gif animation
+%    TRANSITION_DELAY (array 1 x N , where N = alpha +1, default delay time  = 0.3). Delay time betwen frames.
 % OPT.PSOM (structure) options for PSOM. See PSOM_RUN_PIPELINE.
 % OPT.FLAG_VERBOSE (boolean, default true) if true, verbose on progress. 
 % OPT.FLAG_TEST (boolean, default false) if the flag is true, the pipeline will 
@@ -79,15 +80,22 @@ end
 if nargin < 2
     opt = struct;
 end
-coord_def =[-30 , -65 , -15 ; 
-                      -8 , -25 ,  10 ;  
-                     30 ,  45 ,  60];
+
+coord_def =[-30 , -65 , -15 ;... 
+            -8 , -25 ,  10 ; ...  
+            30 ,  45 ,  60];
 opt = psom_struct_defaults ( opt , ...
     { 'folder_out' , 'coord'      , 'flag_decoration', 'gif'    , 'flag_test' , 'psom'   , 'flag_verbose' }, ...
     { pwd          , coord_def    , true             , struct() , false       , struct() , true           });
-
 opt.folder_out = niak_full_path(opt.folder_out);
 opt.psom.path_logs = [opt.folder_out 'logs' filesep];
+
+%% Check Gif generation
+if sum(isfield (opt.gif,{'alpha','ratio','transition_delay'})) >= 1
+   flag_gif = true;
+   path_gif = [opt.folder_out 'zooniverse_gif' filesep];
+   opt.flag_decoration = false;
+end
 
 %% Add the summary for the template
 pipe = struct;
@@ -103,7 +111,9 @@ optj.flag_decoration = opt.flag_decoration;
 optj.id = 'MNI152';
 pipe = psom_add_job(pipe,'summary_template','niak_brick_qc_fmri_preprocess',inj,outj,optj);
 
+
 %% Add the generation of summary images for all subjects
+n_shift = 0;
 for ss = 1:length(list_subject)
     clear inj outj optj
     subject = list_subject{ss};
@@ -124,34 +134,48 @@ for ss = 1:length(list_subject)
     pipe = psom_add_job(pipe,['report_' subject],'niak_brick_qc_fmri_preprocess',inj,outj,optj);
     
     %% Add gif figure for zooniverse platform
-    if sum(isfield (opt.gif,{'alpha','ratio'})) >= 1
-       
-        
+    if flag_gif = true
     
-end
-
-
-%% Add gif figure for zooniverse platform
-for ss = 1:length(list_subject)
-    clear inj outj optj
-    subject = list_subject{ss};
-    if opt.flag_verbose
-       fprintf('Adding job: GIF images for subject %s\n',subject);
+       % anat2template
+       ing.img1 = pipe.(['report_' subject]).files_out.anat;
+       ing.img2 = pipe.summary_template.files_out.template;
+       outg = [path_gif 'summary_' subject '_anat2template.gif'];
+       optg.ratio = opt.gif.ratio;
+       optg.alpha = opt.gif.alpha;
+       optg.transition_delay = opt.gif.transition_delay;
+       pipe = psom_add_job(pipe,['gif_report_anat2template_' subject],'niak_brick_img2gif',ing,outg,optg);
+       
+       % func2anat
+       ing.img1 = pipe.(['report_' subject]).files_out.func;
+       ing.img2 = pipe.(['report_' subject]).files_out.anat;
+       outg = [path_gif 'summary_' subject '_func2anat.gif'];
+       optg.ratio = opt.gif.ratio;
+       optg.alpha = opt.gif.alpha;
+       optg.transition_delay = opt.gif.transition_delay;
+       pipe = psom_add_job(pipe,['gif_report_func2anat_' subject],'niak_brick_img2gif',ing,outg,optg);
+       
+       % Manifest file creation
+      if ss == 1 
+         tab{ss,1} = [subject '_anat'] ;
+         tab{ss,2} = [path_gif 'summary_' subject '_anat2template.gif'];
+         tab{ss+1,1} = [subject '_func'];
+         tab{ss+1,2} = [path_gif 'summary_' subject '_func2anat.gif'];
+      else
+         tab{ss+n_shift,1} = [subject '_anat'] ;
+         tab{ss+n_shift,2} = [path_gif 'summary_' subject '_anat2template.gif'];
+         tab{ss+n_shift+1,1} = [subject '_func'] ;
+         tab{ss+n_shift+1,2} = [path_gif 'summary_' subject '_func2anat.gif'];
+      end
+      n_shift = n_shift+1;
     end
-    inj.anat = in.anat.(subject);
-    inj.func = in.func.(subject);
-    inj.template = in.template;
-    outj.anat = [opt.folder_out 'summary_' subject '_anat.jpg'];
-    outj.func = [opt.folder_out 'summary_' subject '_func.jpg'];
-    outj.template = 'gb_niak_omitted';
-    outj.report =  [opt.folder_out 'report_coregister_' subject '.html'];
-    optj.coord = opt.coord;
-    optj.flag_decoration = opt.flag_decoration;
-    optj.id = subject;
-    optj.template = pipe.summary_template.files_out.template;
-    pipe = psom_add_job(pipe,['report_' subject],'niak_brick_qc_fmri_preprocess',inj,outj,optj);
 end
 
+%% Save manifest file
+header_labels = {'subject_ID','images'};
+tab_final = [header_labels ; tab];
+file_name = [path_gif 'zooniverse_manifest_file.csv'];
+niak_write_csv_cell(file_name,tab_final);
+pipe = psom_add_job(pipe,'gif_report_manifest_file','niak_write_csv_cell',file_name,tab_final);
 
 %% Add a spreadsheet to write the QC. 
 clear inj outj optj
