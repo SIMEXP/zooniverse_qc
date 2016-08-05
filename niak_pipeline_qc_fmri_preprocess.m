@@ -94,6 +94,10 @@ opt.psom.path_logs = [opt.folder_out 'logs' filesep];
 if sum(isfield (opt.gif,{'alpha','ratio','transition_delay'})) >= 1
    flag_gif = true;
    path_gif = [opt.folder_out 'zooniverse_gif' filesep];
+   
+   opt.gif = psom_struct_defaults ( opt.gif , ...
+        { 'ratio' , 'alpha' , 'transition_delay' }, ...
+        { 0.6     , 3       , []                 });
    opt.flag_decoration = false;
 end
 
@@ -134,7 +138,7 @@ for ss = 1:length(list_subject)
     pipe = psom_add_job(pipe,['report_' subject],'niak_brick_qc_fmri_preprocess',inj,outj,optj);
     
     %% Add gif figure for zooniverse platform
-    if flag_gif = true
+    if flag_gif == true
     
        % anat2template
        ing.img1 = pipe.(['report_' subject]).files_out.anat;
@@ -173,9 +177,9 @@ end
 %% Save manifest file
 header_labels = {'subject_ID','images'};
 tab_final = [header_labels ; tab];
+niak_mkdir(path_gif);
 file_name = [path_gif 'zooniverse_manifest_file.csv'];
 niak_write_csv_cell(file_name,tab_final);
-pipe = psom_add_job(pipe,'gif_report_manifest_file','niak_write_csv_cell',file_name,tab_final);
 
 %% Add a spreadsheet to write the QC. 
 clear inj outj optj

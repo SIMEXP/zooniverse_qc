@@ -6,7 +6,7 @@ function [in,out,opt] = niak_brick_img2gif(in,out,opt)
 %
 % IN.IMG1 (string) file name of the first image (.png or .jpg)
 % IN.IMG2 (string) file name of the second image (.png or .jpg)
-% OUT (string) the file name for the GIF animated image. 
+% OUT (string) full path and file name for the GIF animated image. 
 % OPT.RATIO (integer, default 0.6) reduce image size, numbers can range from 0.1 to 1.
 % OPT.ALPHA (integer, default 3) Number of transition frames betwenen to images to build the gif animation
 % OPT.TRANSITION_DELAY (array 1 x N , where N = alpha +1, default delay time  = 0.3). Delay time betwen frames.
@@ -47,8 +47,8 @@ in = psom_struct_defaults( in , ...
     { NaN    , NaN });
     
 if nargin < 2 
-   warning( 'output and filename not specified: we will use the current directory : s%/out_img2gif.gif n\',pwd) 
-   out = 'out_img2gif.gif';
+   warning( 'output and filename not specified, we will use the current directory and filename : %s/out_img2gif.gif',pwd) 
+   out =  sprintf('%s/out_img2gif.gif',pwd);
 end  
 opt = psom_struct_defaults ( opt , ...
     { 'ratio' , 'alpha' , 'transition_delay' , 'flag_test' }, ...
