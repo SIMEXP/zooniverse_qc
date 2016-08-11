@@ -38,6 +38,34 @@ The most frequent issues related to brain segmentation and spatial normalisation
 #####  [OK Case](http://simexp.github.io/adhd200_qc_athena/wrapper_X0021005.html)
 ![OK case](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_anat_MR_ok/summary_X_0021041_anat2template_target.gif?raw=true)
 
+#### **BET** problem with brain extraction.
+
+#####  [Failed Case](http://simexp.github.io/adhd200_qc_athena/wrapper_X3699991.html)
+
+
+![ Fail](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_anat_BET_fail/summary_X_3699991_anat2template_target.gif?raw=true)
+
+#####  [Maybe Case](http://simexp.github.io/adhd200_qc_niak/wrapper_X0010042.html)
+![maybe case](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_anat_BET_maybe/summary_X_0010042_anat2template_target.gif?raw=true)
+
+#####  [OK Case](http://simexp.github.io/adhd200_qc_niak/wrapper_X1988015.html)
+![OK case](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_anat_BET_OK/summary_X_1988015_anat2template_target.gif?raw=true)
+
+
+#### **ART**    miscellaneous types of artefacts.
+
+#####  [Failed Case](http://simexp.github.io/adhd200_qc_niak/wrapper_X0010013.html)
+
+
+![ Fail](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_anat_ART_fail/summary_X_0010013_anat2template_target.gif?raw=true)
+
+#####  [Maybe Case](http://simexp.github.io/adhd200_qc_niak/wrapper_X2026113.html)
+![maybe case](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_anat_ART_maybe/summary_X_2026113_anat2template_target.gif?raw=true)
+
+#####  [OK Case](http://simexp.github.io/adhd200_qc_niak/wrapper_X0021043.html)
+![OK case](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_anat_ART_OK/summary_X_0021043_anat2template_target.gif?raw=true)
+
+
 #### T2* normalisation
 #### *Brain segmentation - Spatial normalisation*
 ![](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/fig_qc_t2.png?raw=true)
