@@ -30,12 +30,13 @@ The most frequent issues related to brain segmentation and spatial normalisation
 #####  [Failed Case](http://simexp.github.io/adhd200_qc_niak/wrapper_X0010032.html)
 
 
-![Epic Fail](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_anat_MR_fail/morph_X_0010032_anat_template_target.gif?raw=true)
+![Epic Fail](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_anat_MR_fail/summary_X_0010032_anat2template_target.gif?raw=true)
 
 #####  [Maybe Case](http://simexp.github.io/adhd200_qc_niak/wrapper_X0021005.html)
-![maybe case](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_anat_MR_maybe/morph_X_0021005_anat_template_target.gif?raw=true)
+![maybe case](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_anat_MR_maybe/summary_X_0021005_anat2template_target.gif?raw=true)
 
 #####  [OK Case](http://simexp.github.io/adhd200_qc_athena/wrapper_X0021005.html)
+![OK case](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_anat_MR_ok/summary_X_0021041_anat2template_target.gif?raw=true)
 
 #### T2* normalisation
 #### *Brain segmentation - Spatial normalisation*
