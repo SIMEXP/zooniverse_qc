@@ -66,6 +66,14 @@ The most frequent issues related to brain segmentation and spatial normalisation
 ![OK case](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_anat_ART_OK/summary_X_0021043_anat2template_target.gif?raw=true)
 
 
+#### **MOT**    Motion artefacts.
+
+#####  [Failed Case](http://simexp.github.io/adhd200_qc_niak/wrapper_X0010003.html)
+
+
+![ Fail](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_anat_MOT_fail/summary_X_0010003_anat2template_target.gif?raw=true)
+
+
 #### T2* normalisation
 #### *Brain segmentation - Spatial normalisation*
 ![](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/fig_qc_t2.png?raw=true)
