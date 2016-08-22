@@ -66,14 +66,96 @@ The most frequent issues related to brain segmentation and spatial normalisation
 ![OK case](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_anat_ART_OK/summary_X_0021043_anat2template_target.gif?raw=true)
 
 
-#### **MOT**    Motion artefacts.
+#### **MOT** Motion artefacts.
 
 #####  [Failed Case](http://simexp.github.io/adhd200_qc_niak/wrapper_X0010003.html)
 
-
 ![ Fail](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_anat_MOT_fail/summary_X_0010003_anat2template_target.gif?raw=true)
+
+#####  [Maybe Case](http://simexp.github.io/adhd200_qc_niak/wrapper_X1696588.html)
+
+![ Maybe](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_anat_MOT_maybe/summary_X_1696588_anat2template_target.gif?raw=true)
+
+
+#### **FOV** Incomplete field of view.
+
+##### [Failed Case](http://simexp.github.io/adhd200_qc_athena/wrapper_X2854839.html)
+
+![ Fail](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_anat_FOV_fail/summary_X_2854839_anat2template_target.gif?raw=true)
+
+#####  [Maybe Case](http://simexp.github.io/adhd200_qc_niak/wrapper_X2907383.html)
+
+![ Maybe](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_anat_FOV_maybe/summary_X_2907383_anat2template_target.gif?raw=true)
+
+
+#### **GHO** Ghosting.
+
+#####  [Maybe Case](http://simexp.github.io/adhd200_qc_niak/wrapper_X3515506.html)
+
+![ Maybe](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_anat_GHO_maybe/summary_X_3515506_anat2template_target.gif?raw=true)
+
+
+#### **ATR** General brain atrophy.
+
+#####  [Maybe Case](http://simexp.github.io/adhd200_qc_niak/wrapper_X3163200.html)
+
+![ Maybe](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_anat_ATR_maybe/summary_X_3163200_anat2template_target.gif?raw=true)
+
 
 
 #### T2* normalisation
 #### *Brain segmentation - Spatial normalisation*
 ![](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/fig_qc_t2.png?raw=true)
+
+The anatomical landmarks that should be well aligned in a successful coregistration include: central sulcus (**A**), cingulate sulcus (**B**), parieto-occipital fissure (**C**), calcarine fissure (**D**), tentorium cerebellum (**E**), the lateral ventricles (**F**), the hippocampal formation (**H**) and the outline of the brain (**G**) bilateraly. The landmarks are outlined on an individual brain after successful non-linear coregistration in stereotaxic space.
+
+#### **MR** Misregistration between the T1/T2*.
+
+##### [Failed Case](http://simexp.github.io/adhd200_qc_athena/wrapper_X0026030.html)
+
+![ Fail](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_func_MR_fail/summary_X_0026030_func2anat_target.gif?raw=true)
+
+#####  [Maybe Case](http://simexp.github.io/adhd200_qc_athena/wrapper_X0010002.html)
+
+![ Maybe](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_func_MR_maybe/summary_X_0010002_func2anat_target.gif?raw=true)
+
+#####  [OK Case](http://simexp.github.io/adhd200_qc_niak/wrapper_X0010054.html)
+
+![ OK](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_func_MR_OK/summary_X_0010054_func2anat_target.gif?raw=true)
+
+#### **FOV** Incomplete field of view.
+
+##### [Failed Case](http://simexp.github.io/adhd200_qc_niak/wrapper_X0026043.html)
+
+![ Fail](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_func_FOV_fail/summary_X_0026043_func2anat_target.gif?raw=true)
+
+#####  [Maybe Case](http://simexp.github.io/adhd200_qc_niak/wrapper_X0026005.html)
+
+![ Maybe](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_func_FOV_maybe/summary_X_0026005_func2anat_target.gif?raw=true)
+
+#### **ABN**  Brain abnormality.
+
+##### [Failed Case](http://simexp.github.io/adhd200_qc_niak/wrapper_X0026043.html)
+
+![ Fail](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_func_ABN_fail/summary_X_0016017_func2anat_target.gif?raw=true)
+
+#### **SL** Signal loss.
+
+##### [Failed Case](http://simexp.github.io/adhd200_qc_niak/wrapper_X0010023.html)
+
+![ Fail](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_func_SL_fail/summary_X_0010023_func2anat_target.gif?raw=true)
+
+#####  [Maybe Case](http://simexp.github.io/adhd200_qc_niak/wrapper_X1201251.html)
+
+![ Maybe](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_func_SL_maybe/summary_X_1201251_func2anat_target.gif?raw=true)
+
+
+#### **DEF** Non-linear deformations between the anat and the func..
+
+##### [Failed Case](http://simexp.github.io/adhd200_qc_athena/wrapper_X8218392.html)
+
+![ Fail](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_func_DEF_fail/summary_X_8218392_func2anat_target.gif?raw=true)
+
+#####  [Maybe Case](http://simexp.github.io/adhd200_qc_athena/wrapper_X0026016.html)
+
+![ Maybe](https://github.com/SIMEXP/zooniverse_qc/blob/master/qc_manual/Fig_func_DEF_maybe/summary_X_0026016_func2anat_target.gif?raw=true)
