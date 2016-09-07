@@ -9,6 +9,7 @@ function pipe = niak_pipeline_qc_fmri_preprocess(in,opt)
 % IN.FUNC.(SUBJECT) (string) the file name of an individual functional volume (in stereotaxic space)
 %   Labels SUBJECT need to be consistent with IN.ANAT. 
 % IN.TEMPLATE   (string) the file name of the template used for registration in stereotaxic space.
+% IN.TEMPLATE_LAYOUT   (string) the file name of the template layout in stereotaxic space for QC landmarks.
 % OPT.FOLDER_OUT (string) where to generate the outputs. 
 % OPT.COORD       (array N x 3) Coordinates for the figure. The default is:
 %                               [-30 , -65 , -15 ; 
@@ -115,7 +116,30 @@ optj.flag_decoration = opt.flag_decoration;
 optj.id = 'MNI152';
 pipe = psom_add_job(pipe,'summary_template','niak_brick_qc_fmri_preprocess',inj,outj,optj);
 
+%% Add the summary for the layout template
+pipe = struct;
+inj.anat = 'gb_niak_omitted';
+inj.func = 'gb_niak_omitted';
+inj.template = in.template_layout;
+outj.anat = 'gb_niak_omitted';
+outj.func = 'gb_niak_omitted';
+outj.template = [opt.folder_out 'summary_template_layout.jpg'];
+outj.report =  'gb_niak_omitted';
+optj.coord = opt.coord;
+optj.flag_decoration = opt.flag_decoration;
+optj.id = 'MNI152_layout';
+pipe = psom_add_job(pipe,'summary_template_layout','niak_brick_qc_fmri_preprocess',inj,outj,optj);
 
+
+%% Merge layout with template
+pipe.merge_layout_template.command = [ 'img1 = imread(pipe.summary_template.files_out.template); ' ...
+                     'img2 = imread(pipe.summary_template_layout.files_out.template); ' ...
+                     'mask = img2 > opt.thresh; ' ...
+                     'img12 = img1; ' ...
+                     'img12(mask) = opt.alpha * img1(mask) + (1-opt.alpha) * img2(mask); ' ...
+                     'imzrite(img12,files_out);'];
+                     
+                     
 %% Add the generation of summary images for all subjects
 n_shift = 0;
 for ss = 1:length(list_subject)
