@@ -61,8 +61,8 @@ psom_gb_vars;
 
 % Inputs
 in = psom_struct_defaults( in , ...
-    { 'anat' , 'template' , 'func' }, ...
-    { NaN   , NaN          , NaN   });
+    { 'anat' , 'template' , 'template_layout' , 'func' }, ...
+    { NaN    , NaN        ,  NaN              , NaN    });
 
 if ~isstruct(in.anat)
     error('IN.ANAT needs to be a structure');
@@ -86,8 +86,8 @@ coord_def =[-30 , -65 , -15 ;...
             -8 , -25 ,  10 ; ...  
             30 ,  45 ,  60];
 opt = psom_struct_defaults ( opt , ...
-    { 'folder_out' , 'coord'      , 'flag_decoration', 'gif'    , 'flag_test' , 'psom'   , 'flag_verbose' }, ...
-    { pwd          , coord_def    , true             , struct() , false       , struct() , true           });
+    { 'folder_out' , 'coord'      , 'flag_decoration', 'gif'    , 'flag_test' , 'psom'   , 'flag_layout' , 'flag_verbose' }, ...
+    { pwd          , coord_def    , true             , struct() , false       , struct() , false         , true  });
 opt.folder_out = niak_full_path(opt.folder_out);
 opt.psom.path_logs = [opt.folder_out 'logs' filesep];
 
@@ -116,30 +116,47 @@ optj.flag_decoration = opt.flag_decoration;
 optj.id = 'MNI152';
 pipe = psom_add_job(pipe,'summary_template','niak_brick_qc_fmri_preprocess',inj,outj,optj);
 
-%% Add the summary for the layout template
-pipe = struct;
-inj.anat = 'gb_niak_omitted';
-inj.func = 'gb_niak_omitted';
-inj.template = in.template_layout;
-outj.anat = 'gb_niak_omitted';
-outj.func = 'gb_niak_omitted';
-outj.template = [opt.folder_out 'summary_template_layout.jpg'];
-outj.report =  'gb_niak_omitted';
-optj.coord = opt.coord;
-optj.flag_decoration = opt.flag_decoration;
-optj.id = 'MNI152_layout';
-pipe = psom_add_job(pipe,'summary_template_layout','niak_brick_qc_fmri_preprocess',inj,outj,optj);
+%% Add the summary for the layout
+if ~isnan(in.template_layout)
+    opt.flag_layout = true;
+    inj.anat = 'gb_niak_omitted';
+    inj.func = 'gb_niak_omitted';
+    inj.template = in.template_layout;
+    outj.anat = 'gb_niak_omitted';
+    outj.func = 'gb_niak_omitted';
+    outj.template = [opt.folder_out 'summary_layout.jpg'];
+    outj.report =  'gb_niak_omitted';
+    optj.coord = opt.coord;
+    optj.flag_decoration = opt.flag_decoration;
+    optj.id = 'MNI152_layout';
+    pipe = psom_add_job(pipe,'summary_template_layout','niak_brick_qc_fmri_preprocess',inj,outj,optj);
+    
+    %% Color in red layout template
+    pipe.color_layout_template.command = [ 'img1 = imread(files_in); ' ...
+                                           'img_rgb = cat(3,img1,zeros(size(img1)),zeros(size(img1))); ' ...
+                                           'imwrite(img_rgb,files_out);'];
+    pipe.color_layout_template.files_in  = pipe.summary_template_layout.files_out.template;
+    pipe.color_layout_template.files_out = [opt.folder_out 'summary_layout_color.jpg'];
+    %% Merge layout with template
+    pipe.merge_layout_template.command = [ 'img1 = imread(files_in{1}); ' ...
+                                           'img2 = imread(files_in{2}); ' ...
+                                           'mask = img1 > opt.thresh; ' ...
+                                           'img12 = img2; ' ...
+                                           'img12(mask) = opt.alpha * img2(mask) + (1-opt.alpha) * img1(mask); ' ...
+                                           'imwrite(img12,files_out);'];
+    pipe.merge_layout_template.files_in{1} = pipe.summary_template.files_out.template;
+    pipe.merge_layout_template.files_in{2} = pipe.color_layout_template.files_out;
+    pipe.merge_layout_template.files_out   = [opt.folder_out 'summary_template_layout.jpg'];
+    pipe.merge_layout_template.opt.thresh  = 0.2;
+    pipe.merge_layout_template.opt.alpha   = 0.5;
+end
 
-
-%% Merge layout with template
-pipe.merge_layout_template.command = [ 'img1 = imread(pipe.summary_template.files_out.template); ' ...
-                     'img2 = imread(pipe.summary_template_layout.files_out.template); ' ...
-                     'mask = img2 > opt.thresh; ' ...
-                     'img12 = img1; ' ...
-                     'img12(mask) = opt.alpha * img1(mask) + (1-opt.alpha) * img2(mask); ' ...
-                     'imzrite(img12,files_out);'];
-                     
-                     
+if opt.flag_layout == true
+   template = pipe.merge_layout_template.files_out;
+   else
+   template = pipe.summary_template.files_out.template;
+end
+   
 %% Add the generation of summary images for all subjects
 n_shift = 0;
 for ss = 1:length(list_subject)
@@ -158,7 +175,7 @@ for ss = 1:length(list_subject)
     optj.coord = opt.coord;
     optj.flag_decoration = opt.flag_decoration;
     optj.id = subject;
-    optj.template = pipe.summary_template.files_out.template;
+    optj.template = template;
     pipe = psom_add_job(pipe,['report_' subject],'niak_brick_qc_fmri_preprocess',inj,outj,optj);
     
     %% Add gif figure for zooniverse platform
@@ -166,7 +183,7 @@ for ss = 1:length(list_subject)
     
        % anat2template
        ing.img1 = pipe.(['report_' subject]).files_out.anat;
-       ing.img2 = pipe.summary_template.files_out.template;
+       ing.img2 = template;
        outg = [path_gif 'summary_' subject '_anat2template.gif'];
        optg.ratio = opt.gif.ratio;
        optg.alpha = opt.gif.alpha;
