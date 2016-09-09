@@ -5,9 +5,9 @@ addpath(genpath('/home/yassinebha/git/zooniverse_qc'))
 %niak
 path_fmri_preproc = '/media/yassinebha/database25/zooniverse_project/adhd200_fmri_preprocess_niak/';
 files_in  = niak_grab_qc_fmri_preprocess(path_fmri_preproc);
+files_in.template_layout = '~/git/zooniverse_qc/mask_all_layout.nii.gz';
 opt.folder_out = '/media/yassinebha/database25/zooniverse_project/test_zooniverse/';
 opt.gif.transition_delay = [0.3 0.15 0.4 0.15];
-opt.template_layout = '~/git/zooniverse_qc/mask_all_layout.nii.gz';
 opt.psom.max_queued = 8;
 niak_pipeline_qc_fmri_preprocess(files_in,opt);
 
