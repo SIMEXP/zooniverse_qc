@@ -1,3 +1,12 @@
+path_fmri_preproc = '/media/yassinebha/database25/HCP_qc/fmri_preprocess_all_tasks_niak-iss100';
+files_in  = niak_grab_qc_fmri_preprocess(path_fmri_preproc);
+files_in.template_layout = which('mask_all_layout.nii.gz');
+opt.folder_out = '/media/yassinebha/database25/HCP_qc/fmri_preprocess_all_tasks_niak-iss100/test_zooniverse/';
+opt.gif.transition_delay = [0.3 0.15 0.4 0.15];
+opt.psom.max_queued = 8;
+niak_pipeline_qc_fmri_preprocess(files_in,opt);
+
+
 % generate images for zooniverse platform
 path_preproc = '/media/yassinebha/database24/adhd200/';
 files_in = niak_grab_qc_fmri_preprocess(path_preproc);
