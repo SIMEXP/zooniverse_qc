@@ -179,7 +179,7 @@ for ss = 1:length(list_subject)
                                                               '[img12,~] = niak_overlay_images(img1,img2,opt); ' ...
                                                               'imwrite(img12,files_out);'];
        pipe.(['merge_layout_anat_subj_' subject]).files_in{1} = pipe.(['report_' subject]).files_out.anat;
-       pipe.(['merge_layout_anat_subj_' subject]).files_in{2} = pipe.merge_layout_template.files_out;
+       pipe.(['merge_layout_anat_subj_' subject]).files_in{2} = pipe.summary_template_layout.files_out.template;
        pipe.(['merge_layout_anat_subj_' subject]).files_out   = [opt.folder_out 'summary_' subject '_anat_layout.jpg'];
        pipe.(['merge_layout_anat_subj_' subject]).opt.thresh  = 0.2;
        pipe.(['merge_layout_anat_subj_' subject]).opt.alpha   = 0.25;
@@ -200,7 +200,7 @@ for ss = 1:length(list_subject)
        % func2anat
        ing.img1 = pipe.(['report_' subject]).files_out.func;
        if opt.flag_layout == true
-          ing.img2 = pipe.(['merge_layout_anat_subj_' subject]).files_out.anat;
+          ing.img2 = pipe.(['merge_layout_anat_subj_' subject]).files_out;
        else 
           ing.img2 = pipe.(['report_' subject]).files_out.anat;
        end
@@ -210,9 +210,9 @@ for ss = 1:length(list_subject)
        optg.transition_delay = opt.gif.transition_delay;
        pipe = psom_add_job(pipe,['gif_report_func2anat_' subject],'niak_brick_img2gif',ing,outg,optg);
        if opt.flag_layout == true
-          pipe.(['rename_anat_subj_' subject]).command   = [ 'rename (file_in, file_out); ' ];
-          pipe.(['rename_anat_subj_' subject]).files_in  = pipe.(['gif_report_func2anat_' subject]).files_in.img2;
-          pipe.(['rename_anat_subj_' subject]).files_out = [opt.folder_out 'summary_' subject '_anat.jpg'];
+          pipe.(['rename_anat_subj_' subject]).command   = [ 'rename (files_in{1}, files_in{2}); ' ];
+          pipe.(['rename_anat_subj_' subject]).files_in{1}  = pipe.(['gif_report_func2anat_' subject]).files_in.img2;
+          pipe.(['rename_anat_subj_' subject]).files_in{2} = pipe.(['report_' subject]).files_out.anat;
        end   
        
        % Manifest file creation

@@ -56,11 +56,16 @@ end
 
 %% Merge layout with template
 img2 = img2_rgb;
-img1 = repmat(img1,[1 1 3]); 
+if ndims(img1)==2
+    img1 = repmat(img1,[1 1 3]);
+end
+if ndims(img2)==2
+    img2 = repmat(img2,[1 1 3]);
+end
 img2_i = mean(img2,3);
 img2_i = img2_i / max(img2_i(:));
 mask = img2_i > opt.thresh;
 mask = repmat(mask,[1 1 size(img2,3)]);
 img12 = img1;
-img12(mask) = opt.alpha * img2(mask) + (1-opt.alpha) * img1(mask); ' ...
+img12(mask) = opt.alpha * img2(mask) + (1-opt.alpha) * img1(mask);
 
