@@ -95,13 +95,15 @@ opt.psom.path_logs = [opt.folder_out 'logs' filesep];
 
 %% Check Gif generation
 if sum(isfield (opt.gif,{'alpha','ratio','transition_delay'})) >= 1
-   flag_gif = true;
+   opt.flag_gif = true;
    path_gif = [opt.folder_out 'zooniverse_gif' filesep];
    
    opt.gif = psom_struct_defaults ( opt.gif , ...
         { 'ratio' , 'alpha' , 'transition_delay' }, ...
         { 0.6     , 3       , []                 });
    opt.flag_decoration = false;
+else 
+   opt.flag_gif = false;
 end
 
 %% Add the summary for the template
@@ -143,6 +145,8 @@ if ~isempty(in.template_layout)
     pipe.merge_layout_template.files_out   = [opt.folder_out 'summary_template_layout.jpg'];
     pipe.merge_layout_template.opt.thresh  = 0.2;
     pipe.merge_layout_template.opt.alpha   = 0.25;
+else
+    opt.flag_layout = false;
 end
 
 if opt.flag_layout == true
@@ -186,7 +190,7 @@ for ss = 1:length(list_subject)
     end
     
     %% generate gif image for zooniverse platform
-    if flag_gif == true
+    if opt.flag_gif == true
     
        % anat2template
        ing.img1 = pipe.(['report_' subject]).files_out.anat;
@@ -209,11 +213,6 @@ for ss = 1:length(list_subject)
        optg.alpha = opt.gif.alpha;
        optg.transition_delay = opt.gif.transition_delay;
        pipe = psom_add_job(pipe,['gif_report_func2anat_' subject],'niak_brick_img2gif',ing,outg,optg);
-       if opt.flag_layout == true
-          pipe.(['rename_anat_subj_' subject]).command   = [ 'rename (files_in{1}, files_in{2}); ' ];
-          pipe.(['rename_anat_subj_' subject]).files_in{1}  = pipe.(['gif_report_func2anat_' subject]).files_in.img2;
-          pipe.(['rename_anat_subj_' subject]).files_in{2} = pipe.(['report_' subject]).files_out.anat;
-       end   
        
        % Manifest file creation
        if ss == 1 
@@ -232,7 +231,7 @@ for ss = 1:length(list_subject)
 end
 
 %% Save manifest file
-if opt.flag_layout == true
+if opt.flag_gif == true
    header_labels = {'subject_ID','images'};
    tab_final = [header_labels ; tab];
    niak_mkdir(path_gif);
