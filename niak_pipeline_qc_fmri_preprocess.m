@@ -23,7 +23,7 @@ function pipe = niak_pipeline_qc_fmri_preprocess(in,opt)
 %    RATIO (float,  default 0.6) it reduce image size, numbers can range from 0.1 to 1
 %    ALPHA (integer, default 3) Number of transition frames betwenen to images to build the gif animation
 %    TRANSITION_DELAY (array 1 x N , where N = alpha +1, default delay time  = 0.3). Delay time betwen frames.
-% OPT.flag_layout (boolean, default false) if the flag is true, the pipeline will generate layout images on images
+% OPT.FLAG_LAYOUT (boolean, default false) if the flag is true, the pipeline will generate layout images on images
 % OPT.PSOM (structure) options for PSOM. See PSOM_RUN_PIPELINE.
 % OPT.FLAG_VERBOSE (boolean, default true) if true, verbose on progress. 
 % OPT.FLAG_TEST (boolean, default false) if the flag is true, the pipeline will 
@@ -111,9 +111,11 @@ pipe = struct;
 inj.anat = 'gb_niak_omitted';
 inj.func = 'gb_niak_omitted';
 inj.template = in.template;
+inj.layout = 'gb_niak_omitted';
 outj.anat = 'gb_niak_omitted';
 outj.func = 'gb_niak_omitted';
 outj.template = [opt.folder_out 'summary_template.jpg'];
+outj.layout = 'gb_niak_omitted';
 outj.report =  'gb_niak_omitted';
 optj.coord = opt.coord;
 optj.flag_decoration = opt.flag_decoration;
@@ -125,10 +127,12 @@ if ~isempty(in.template_layout)
     opt.flag_layout = true;
     inj.anat = 'gb_niak_omitted';
     inj.func = 'gb_niak_omitted';
-    inj.template = in.template_layout;
+    inj.template = in.template;
+    inj.layout = in.template_layout;
     outj.anat = 'gb_niak_omitted';
     outj.func = 'gb_niak_omitted';
-    outj.template = [opt.folder_out 'summary_layout.jpg'];
+    outj.template = 'gb_niak_omitted';
+    outj.layout = [opt.folder_out 'summary_layout.jpg'];
     outj.report =  'gb_niak_omitted';
     optj.coord = opt.coord;
     optj.flag_decoration = opt.flag_decoration;
@@ -166,12 +170,15 @@ for ss = 1:length(list_subject)
     inj.anat = in.anat.(subject);
     inj.func = in.func.(subject);
     inj.template = in.template;
+    inj.layout = 'gb_niak_omitted';
     outj.anat = [opt.folder_out 'summary_' subject '_anat.jpg'];
     outj.func = [opt.folder_out 'summary_' subject '_func.jpg'];
     outj.template = 'gb_niak_omitted';
+    outj.layout = 'gb_niak_omitted';
     outj.report =  [opt.folder_out 'report_coregister_' subject '.html'];
     optj.coord = opt.coord;
     optj.flag_decoration = opt.flag_decoration;
+    optj.flag_layout = opt.flag_layout;
     optj.id = subject;
     optj.template = template;
     pipe = psom_add_job(pipe,['report_' subject],'niak_brick_qc_fmri_preprocess',inj,outj,optj);
