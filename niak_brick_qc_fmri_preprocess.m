@@ -96,12 +96,12 @@ if isempty(out.layout)
     out.layout = [opt.folder_out 'layout_slices.jpg'];
 end
 
-if isempty(out.layout_templae)
-    out.layout = [opt.folder_out 'layout_template_slices.jpg'];
+if isempty(out.layout_template)
+    out.layout_template = [opt.folder_out 'layout_template_slices.jpg'];
 end
 
 if isempty(out.layout_anat)
-    out.layout = [opt.folder_out 'layout_anat_slices.jpg'];
+    out.layout_anat = [opt.folder_out 'layout_t1_slices.jpg'];
 end
 
 if isempty(out.func)
@@ -151,10 +151,10 @@ if ~strcmp(out.template,'gb_niak_omitted')
     niak_brick_vol2img(in_v,out_v,opt_v);
 end
 
-%% Generate the image for the layout
-if ~strcmp(out.layout,'gb_niak_omitted')
+%% Generate the image for the  template layout
+if ~strcmp(out.layout_template,'gb_niak_omitted')
     if opt.flag_verbose
-        fprintf('Generating slices of the layout...\n');
+        fprintf('Generating slices of the layout template...\n');
     end
     in_v.source = in.layout;
     in_v.target = in.template;
@@ -164,25 +164,41 @@ if ~strcmp(out.layout,'gb_niak_omitted')
     opt_v.flag_decoration = opt.flag_decoration;
     opt_v.colormap = 'gray';
     opt_v.limits = 'adaptative';
-    opt_v.title = sprintf('       layout, %s',opt.id);
+    opt_v.title = sprintf('       layout_template, %s',opt.id);
     niak_brick_vol2img(in_v,out_v,opt_v);
-    if flag_merge_layout_template == true
-       img1 = imread(out.template); 
-       img2 = imread(out.layout);
-       opt_o.thresh  = 0.2;
-       opt_o.alpha   = 0.25;
-       files_out = out_v;
-       [img12,~] = niak_overlay_images(img1,img2,opt);
-       imwrite(img12,files_out);
-    elseif flag_merge_layout_anat == true
-       img1 = imread(out.anat); 
-       img2 = imread(out.layout);
-       opt_o.thresh  = 0.2;
-       opt_o.alpha   = 0.25;
-       files_out = out_v;
-       [img12,~] = niak_overlay_images(img1,img2,opt);
-       imwrite(img12,files_out);
+    % merge layout template
+    img1 = imread(out.template); 
+    img2 = imread(out.layout);
+    opt_o.thresh  = 0.2;
+    opt_o.alpha   = 0.25;
+    files_out = out.layout_template;
+    [img12,~] = niak_overlay_images(img1,img2,opt);
+    imwrite(img12,files_out);
+end
+
+%% Generate the image for the  anat layout
+if ~strcmp(out.layout_anat,'gb_niak_omitted')
+    if opt.flag_verbose
+        fprintf('Generating slices of the layout anat...\n');
     end
+    in_v.source = in.layout;
+    in_v.target = in.template;
+    out_v = out.layout;
+    opt_v.coord = opt.coord;
+    opt_v.colorbar = false;
+    opt_v.flag_decoration = opt.flag_decoration;
+    opt_v.colormap = 'gray';
+    opt_v.limits = 'adaptative';
+    opt_v.title = sprintf('       layout_anat, %s',opt.id);
+    niak_brick_vol2img(in_v,out_v,opt_v);
+    % merge layout anat
+    img1 = imread(out.anat); 
+    img2 = imread(out.layout);
+    opt_o.thresh  = 0.2;
+    opt_o.alpha   = 0.25;
+    files_out = out.layout_anat;
+    [img12,~] = niak_overlay_images(img1,img2,opt);
+    imwrite(img12,files_out);
     
 end
 
@@ -212,26 +228,37 @@ if ~strcmp(out.report,'gb_niak_omitted')
     %% Read html template
     file_self = which('niak_pipeline_qc_fmri_preprocess');
     path_self = fileparts(file_self);
-    file_html = [path_self filesep 'niak_template_qc_fmri_preprocess.html'];
+    if opt.flag_layout == true
+       file_html = [path_self filesep 'niak_template_layout_qc_fmri_preprocess.html'];
+    else
+       file_html = [path_self filesep 'niak_template_qc_fmri_preprocess.html'];
+    end
+    
     hf = fopen(file_html,'r');
     str_html = fread(hf,Inf,'uint8=>char')';
     fclose(hf);
 
     %% Modify template and save output
     hf = fopen(out.report,'w+');
-    [path_a,name_a,ext_a] = fileparts(out.anat);
     if opt.flag_layout == true
-       
-    
-    if ~isempty(opt.template)
-       [path_t,name_t,ext_t] = fileparts(opt.template);
+       [path_a,name_a,ext_a] = fileparts(out.anat);
+       [path_al,name_al,ext_al] = fileparts(out.layout_anat);
+       [path_t,name_t,ext_t] = fileparts(out.layout_template);
     else
-       [path_t,name_t,ext_t] = fileparts(out.template);
+       [path_a,name_a,ext_a] = fileparts(out.anat);
+       path_al = path_a;
+       name_al = name_a;
+       ext_al = ext_a;
+       if ~isempty(opt.template)
+          [path_t,name_t,ext_t] = fileparts(opt.template);
+       else
+          [path_t,name_t,ext_t] = fileparts(out.template);
+       end
     end
     [path_f,name_f,ext_f] = fileparts(out.func);
     text_write = strrep(str_html,'$TEMPLATE',[name_t ext_t]);
-    text_write = strrep(text_write,'$ANAT',[name ext]);
-    text_write = strrep(text_write,'$ANAT_LAYOUT',[name_a2 ext_a2]);
+    text_write = strrep(text_write,'$ANAT',[name_a ext_a]);
+    text_write = strrep(text_write,'$ANAT_LAYOUT',[name_al ext_al]);
     text_write = strrep(text_write,'$FUNC',[name_f ext_f]);
     fprintf(hf,'%s',text_write);
     fclose(hf);

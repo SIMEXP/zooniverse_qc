@@ -116,6 +116,8 @@ outj.anat = 'gb_niak_omitted';
 outj.func = 'gb_niak_omitted';
 outj.template = [opt.folder_out 'summary_template.jpg'];
 outj.layout = 'gb_niak_omitted';
+outj.layout_template = 'gb_niak_omitted';
+outj.layout_anat = 'gb_niak_omitted';
 outj.report =  'gb_niak_omitted';
 optj.coord = opt.coord;
 optj.flag_decoration = opt.flag_decoration;
@@ -131,30 +133,22 @@ if ~isempty(in.template_layout)
     inj.layout = in.template_layout;
     outj.anat = 'gb_niak_omitted';
     outj.func = 'gb_niak_omitted';
-    outj.template = 'gb_niak_omitted';
+    outj.template = niak_file_tmp('summary_template.jpg');
     outj.layout = [opt.folder_out 'summary_layout.jpg'];
+    outj.layout_template = [opt.folder_out 'summary_template_layout.jpg'];
+    outj.layout_anat = 'gb_niak_omitted';
     outj.report =  'gb_niak_omitted';
     optj.coord = opt.coord;
     optj.flag_decoration = opt.flag_decoration;
-    optj.id = '';
+    optj.id = 'MNI152_layout';
     pipe = psom_add_job(pipe,'summary_template_layout','niak_brick_qc_fmri_preprocess',inj,outj,optj);
-    
-    %% Merge layout with template
-    pipe.merge_layout_template.command = [ 'img1 = imread(files_in{1}); ' ...
-                                           'img2 = imread(files_in{2}); ' ...
-                                           '[img12,~] = niak_overlay_images(img1,img2,opt); ' ...
-                                           'imwrite(img12,files_out);'];
-    pipe.merge_layout_template.files_in{1} = pipe.summary_template.files_out.template;
-    pipe.merge_layout_template.files_in{2} = pipe.summary_template_layout.files_out.template;
-    pipe.merge_layout_template.files_out   = [opt.folder_out 'summary_template_layout.jpg'];
-    pipe.merge_layout_template.opt.thresh  = 0.2;
-    pipe.merge_layout_template.opt.alpha   = 0.25;
+    pipe.clean.command = 'delete(pipe.summary_template_layout.files_out.template);';
 else
     opt.flag_layout = false;
 end
 
 if opt.flag_layout == true
-   template = pipe.merge_layout_template.files_out;
+   template = pipe.summary_template_layout.files_out.layout_template;
    else
    template = pipe.summary_template.files_out.template;
 end
@@ -174,7 +168,14 @@ for ss = 1:length(list_subject)
     outj.anat = [opt.folder_out 'summary_' subject '_anat.jpg'];
     outj.func = [opt.folder_out 'summary_' subject '_func.jpg'];
     outj.template = 'gb_niak_omitted';
-    outj.layout = 'gb_niak_omitted';
+    outj.layout_template = 'gb_niak_omitted';
+    if opt.flag_layout == true
+       outj.layout = niak_file_tmp('summary_layout.jpg');
+       outj.layout_anat = [opt.folder_out 'summary_' subject '_anat_layout.jpg'];
+    else
+       outj.layout = 'gb_niak_omitted';
+       outj.layout_anat = 'gb_niak_omitted';
+    end   
     outj.report =  [opt.folder_out 'report_coregister_' subject '.html'];
     optj.coord = opt.coord;
     optj.flag_decoration = opt.flag_decoration;
@@ -182,20 +183,10 @@ for ss = 1:length(list_subject)
     optj.id = subject;
     optj.template = template;
     pipe = psom_add_job(pipe,['report_' subject],'niak_brick_qc_fmri_preprocess',inj,outj,optj);
-    
     if opt.flag_layout == true
-       %% Merge layout with subject anat image
-       pipe.(['merge_layout_anat_subj_' subject]).command = [ 'img1 = imread(files_in{1}); ' ...
-                                                              'img2 = imread(files_in{2}); ' ...
-                                                              '[img12,~] = niak_overlay_images(img1,img2,opt); ' ...
-                                                              'imwrite(img12,files_out);'];
-       pipe.(['merge_layout_anat_subj_' subject]).files_in{1} = pipe.(['report_' subject]).files_out.anat;
-       pipe.(['merge_layout_anat_subj_' subject]).files_in{2} = pipe.summary_template_layout.files_out.template;
-       pipe.(['merge_layout_anat_subj_' subject]).files_out   = [opt.folder_out 'summary_' subject '_anat_layout.jpg'];
-       pipe.(['merge_layout_anat_subj_' subject]).opt.thresh  = 0.2;
-       pipe.(['merge_layout_anat_subj_' subject]).opt.alpha   = 0.25;
+       pipe.(['clean_' subject]).command = 'delete(files_in);';
+       pipe.(['clean_' subject]).files_in = pipe.(['report_' subject]).files_out.layout;
     end
-    
     %% generate gif image for zooniverse platform
     if opt.flag_gif == true
     
@@ -211,9 +202,9 @@ for ss = 1:length(list_subject)
        % func2anat
        ing.img1 = pipe.(['report_' subject]).files_out.func;
        if opt.flag_layout == true
-          ing.img2 = pipe.(['merge_layout_anat_subj_' subject]).files_out;
-       else 
           ing.img2 = pipe.(['report_' subject]).files_out.anat;
+       else 
+          ing.img2 = pipe.(['report_' subject]).files_out.layout_anat;
        end
        outg = [path_gif 'summary_' subject '_func2anat.gif'];
        optg.ratio = opt.gif.ratio;

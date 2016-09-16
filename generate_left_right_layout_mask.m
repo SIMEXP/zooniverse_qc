@@ -36,9 +36,9 @@ niak_montage (vol)
 vol_e = niak_morph (vol,'-successive EE');
 niak_montage (vol + vol_e)
 vol_d = niak_morph (vol,'-successive DD');
-#niak_montage (vol+vol_d)
+niak_montage (vol+vol_d)
 vol_f = vol_d & ~vol_e;
-#niak_montage (vol_f)
+niak_montage (vol_f)
 hdr.file_name = [path_layout 'mask_layout/mask_outline_brain.nii.gz'];
 niak_write_vol (hdr,vol_f);
 
