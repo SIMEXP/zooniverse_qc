@@ -115,7 +115,6 @@ inj.layout = 'gb_niak_omitted';
 outj.anat = 'gb_niak_omitted';
 outj.func = 'gb_niak_omitted';
 outj.template = [opt.folder_out 'summary_template.jpg'];
-outj.layout = 'gb_niak_omitted';
 outj.layout_template = 'gb_niak_omitted';
 outj.layout_anat = 'gb_niak_omitted';
 outj.report =  'gb_niak_omitted';
@@ -134,7 +133,6 @@ if ~isempty(in.template_layout)
     outj.anat = 'gb_niak_omitted';
     outj.func = 'gb_niak_omitted';
     outj.template = niak_file_tmp('summary_template.jpg');
-    outj.layout = [opt.folder_out 'summary_layout.jpg'];
     outj.layout_template = [opt.folder_out 'summary_template_layout.jpg'];
     outj.layout_anat = 'gb_niak_omitted';
     outj.report =  'gb_niak_omitted';
@@ -167,14 +165,14 @@ for ss = 1:length(list_subject)
     inj.layout = in.template_layout;
     outj.anat = [opt.folder_out 'summary_' subject '_anat.jpg'];
     outj.func = [opt.folder_out 'summary_' subject '_func.jpg'];
-    outj.template = 'gb_niak_omitted';
-    outj.layout_template = 'gb_niak_omitted';
     if opt.flag_layout == true
-       outj.layout = niak_file_tmp('summary_layout.jpg');
+       outj.template = niak_file_tmp('summary_template.jpg');
+       outj.layout_template = 'gb_niak_omitted';;
        outj.layout_anat = [opt.folder_out 'summary_' subject '_anat_layout.jpg'];
     else
-       outj.layout = 'gb_niak_omitted';
+       outj.template = 'gb_niak_omitted';
        outj.layout_anat = 'gb_niak_omitted';
+       outj.layout_template = 'gb_niak_omitted';
     end   
     outj.report =  [opt.folder_out 'report_coregister_' subject '.html'];
     optj.coord = opt.coord;
@@ -184,7 +182,7 @@ for ss = 1:length(list_subject)
     optj.template = template;
     pipe = psom_add_job(pipe,['report_' subject],'niak_brick_qc_fmri_preprocess',inj,outj,optj);
     if opt.flag_layout == true
-       pipe = psom_add_clean(pipe,(['clean_report_' subject]),outj.layout);
+       pipe = psom_add_clean(pipe,(['clean_report_' subject]),outj.template); 
     end
     %% generate gif image for zooniverse platform
     if opt.flag_gif == true
@@ -201,9 +199,9 @@ for ss = 1:length(list_subject)
        % func2anat
        ing.img1 = pipe.(['report_' subject]).files_out.func;
        if opt.flag_layout == true
-          ing.img2 = pipe.(['report_' subject]).files_out.anat;
-       else 
           ing.img2 = pipe.(['report_' subject]).files_out.layout_anat;
+       else 
+          ing.img2 = pipe.(['report_' subject]).files_out.anat;
        end
        outg = [path_gif 'summary_' subject '_func2anat.gif'];
        optg.ratio = opt.gif.ratio;

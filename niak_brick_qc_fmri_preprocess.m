@@ -10,7 +10,6 @@ function [in,out,opt] = niak_brick_qc_fmri_preprocess(in,out,opt)
 % OUT.STEREO     (string) the file name for the figure checking T1/template coregistration. 
 % OUT.ANAT       (string) the file name for the figure of the T1 scan.
 % OUT.TEMPLATE   (string) the file name for the figure of the template.
-% OUT.LAYOUT    (string) the file name for the figure of the layout.
 % OUT.FUNC       (string) the file name for the figure of the functional volume.
 % OUT.REPORT     (string) the file name of the html report. 
 % OPT.FOLDER_OUT (string) where to generate the outputs. 
@@ -67,8 +66,8 @@ if (nargin < 2) || isempty(out)
     out = struct;
 end 
 out = psom_struct_defaults( out , ...
-    { 'anat' , 'template' , 'layout' ,'layout_template' ,'layout_anat' , 'func' , 'report' }, ...
-    { ''     , ''         , ''       , ''               ,''            , ''     , ''       });
+    { 'anat' , 'template' ,  'layout_template' ,'layout_anat' , 'func' , 'report' }, ...
+    { ''     , ''         ,  ''               ,''            , ''     , ''       });
  
 % Options 
 if nargin < 3
@@ -90,10 +89,6 @@ end
 
 if isempty(out.template)
     out.template = [opt.folder_out 'template_slices.jpg'];
-end
-
-if isempty(out.layout)
-    out.layout = [opt.folder_out 'layout_slices.jpg'];
 end
 
 if isempty(out.layout_template)
@@ -158,7 +153,7 @@ if ~strcmp(out.layout_template,'gb_niak_omitted')
     end
     in_v.source = in.layout;
     in_v.target = in.template;
-    out_v = out.layout;
+    out_v = out.layout_template;
     opt_v.coord = opt.coord;
     opt_v.colorbar = false;
     opt_v.flag_decoration = opt.flag_decoration;
@@ -168,7 +163,7 @@ if ~strcmp(out.layout_template,'gb_niak_omitted')
     niak_brick_vol2img(in_v,out_v,opt_v);
     % merge layout template
     img1 = imread(out.template); 
-    img2 = imread(out.layout);
+    img2 = imread(out.layout_template);
     opt_o.thresh  = 0.2;
     opt_o.alpha   = 0.25;
     files_out = out.layout_template;
@@ -183,7 +178,7 @@ if ~strcmp(out.layout_anat,'gb_niak_omitted')
     end
     in_v.source = in.layout;
     in_v.target = in.template;
-    out_v = out.layout;
+    out_v = out.layout_anat;
     opt_v.coord = opt.coord;
     opt_v.colorbar = false;
     opt_v.flag_decoration = opt.flag_decoration;
@@ -193,7 +188,7 @@ if ~strcmp(out.layout_anat,'gb_niak_omitted')
     niak_brick_vol2img(in_v,out_v,opt_v);
     % merge layout anat
     img1 = imread(out.anat); 
-    img2 = imread(out.layout);
+    img2 = imread(out.layout_anat);
     opt_o.thresh  = 0.2;
     opt_o.alpha   = 0.25;
     files_out = out.layout_anat;
@@ -239,7 +234,7 @@ if ~strcmp(out.report,'gb_niak_omitted')
     if opt.flag_layout == true
        [path_a,name_a,ext_a] = fileparts(out.anat);
        [path_al,name_al,ext_al] = fileparts(out.layout_anat);
-       [path_t,name_t,ext_t] = fileparts(out.layout_template);
+       [path_t,name_t,ext_t] = fileparts([opt.folder_out 'summary_template_layout.jpg']);
     else
        [path_a,name_a,ext_a] = fileparts(out.anat);
        path_al = path_a;
@@ -254,7 +249,7 @@ if ~strcmp(out.report,'gb_niak_omitted')
     [path_f,name_f,ext_f] = fileparts(out.func);
     text_write = strrep(str_html,'$TEMPLATE',[name_t ext_t]);
     text_write = strrep(text_write,'$ANAT',[name_a ext_a]);
-    text_write = strrep(text_write,'$ANATLAYOUT',[name_al ext_al]);
+    text_write = strrep(text_write,'$LAYOUTANAT',[name_al ext_al]);
     text_write = strrep(text_write,'$FUNC',[name_f ext_f]);
     fprintf(hf,'%s',text_write);
     fclose(hf);
