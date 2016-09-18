@@ -1,6 +1,6 @@
 % generate volume layout on stereotaxic space
 
-root_path = '/media/yassinebha/database25/Drive/QC_zooniverse/template_layout/';
+root_path = '/home/yassinebha/Drive/QC_zooniverse/template_layout/';
 path_layout = [root_path 'layout/'];
 list_layout = {(dir([path_layout 'left_*.nii.gz'])).name};
 
@@ -13,7 +13,7 @@ for ii=1:length(list_layout)
     vol_raw(mask==0) = 0;
     region = sprintf('%s',list_layout{ii}(6:end-7));
     switch region
-        case 'ventricule'
+        case {'ventricul'}
         vol_t = vol_raw>0.1; 
         case {'calcarine_sulcus'}
         vol_t = vol_raw>0.6;
@@ -47,3 +47,9 @@ niak_write_vol (hdr,vol_f);
 vol_final = vol_final | vol_f;
 hdr.file_name = [path_layout 'mask_layout/mask_all_layout.nii.gz'];
 niak_write_vol (hdr,vol_final);
+
+% smooth final volume layout
+vol_final_s = niak_morph (vol_final,'-successive DDEE');
+niak_montage (vol_final_s)
+hdr.file_name =  [path_layout 'mask_layout/mask_all_layout_smoothed.nii.gz'];
+niak_write_vol (hdr,vol_final_s);
