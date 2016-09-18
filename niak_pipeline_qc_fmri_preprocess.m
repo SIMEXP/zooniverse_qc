@@ -142,7 +142,7 @@ if ~isempty(in.template_layout)
     optj.flag_decoration = opt.flag_decoration;
     optj.id = 'MNI152_layout';
     pipe = psom_add_job(pipe,'summary_template_layout','niak_brick_qc_fmri_preprocess',inj,outj,optj);
-    pipe.clean.command = 'delete(pipe.summary_template_layout.files_out.template);';
+    pipe = psom_add_clean(pipe,'clean_summary_template_layout',outj.template);
 else
     opt.flag_layout = false;
 end
@@ -164,7 +164,7 @@ for ss = 1:length(list_subject)
     inj.anat = in.anat.(subject);
     inj.func = in.func.(subject);
     inj.template = in.template;
-    inj.layout = 'gb_niak_omitted';
+    inj.layout = in.template_layout;
     outj.anat = [opt.folder_out 'summary_' subject '_anat.jpg'];
     outj.func = [opt.folder_out 'summary_' subject '_func.jpg'];
     outj.template = 'gb_niak_omitted';
@@ -184,8 +184,7 @@ for ss = 1:length(list_subject)
     optj.template = template;
     pipe = psom_add_job(pipe,['report_' subject],'niak_brick_qc_fmri_preprocess',inj,outj,optj);
     if opt.flag_layout == true
-       pipe.(['clean_' subject]).command = 'delete(files_in);';
-       pipe.(['clean_' subject]).files_in = pipe.(['report_' subject]).files_out.layout;
+       pipe = psom_add_clean(pipe,(['clean_report_' subject]),outj.layout);
     end
     %% generate gif image for zooniverse platform
     if opt.flag_gif == true

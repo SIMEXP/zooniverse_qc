@@ -78,8 +78,8 @@ coord_def =[-30 , -65 , -15 ;...
             -8 , -25 ,  10 ;... 
             30 ,  45 ,  60];
 opt = psom_struct_defaults ( opt , ...
-    { 'folder_out' , 'coord'   , 'flag_decoration' , 'flag_test' , 'id'          , 'template', 'layout' , 'flag_merge_layout_template' , 'flag_merge_layout_anat' , 'flag_verbose' }, ...
-    { pwd          , coord_def , true              , false       , 'anonymous'   , ''        , ''       , false                        , false                    , true           });
+    { 'folder_out' , 'coord'   , 'flag_decoration' , 'flag_test' , 'id'          , 'template',  'flag_layout' , 'flag_merge_layout_anat' , 'flag_verbose' }, ...
+    { pwd          , coord_def , true              , false       , 'anonymous'   , ''        ,  false                        , false                    , true           });
 
 opt.folder_out = niak_full_path(opt.folder_out);
 
@@ -199,6 +199,7 @@ if ~strcmp(out.layout_anat,'gb_niak_omitted')
     files_out = out.layout_anat;
     [img12,~] = niak_overlay_images(img1,img2,opt);
     imwrite(img12,files_out);
+    opt.flag_layout = true;
     
 end
 
@@ -228,12 +229,7 @@ if ~strcmp(out.report,'gb_niak_omitted')
     %% Read html template
     file_self = which('niak_pipeline_qc_fmri_preprocess');
     path_self = fileparts(file_self);
-    if opt.flag_layout == true
-       file_html = [path_self filesep 'niak_template_layout_qc_fmri_preprocess.html'];
-    else
-       file_html = [path_self filesep 'niak_template_qc_fmri_preprocess.html'];
-    end
-    
+    file_html = [path_self filesep 'niak_template_qc_fmri_preprocess.html'];
     hf = fopen(file_html,'r');
     str_html = fread(hf,Inf,'uint8=>char')';
     fclose(hf);
@@ -258,7 +254,7 @@ if ~strcmp(out.report,'gb_niak_omitted')
     [path_f,name_f,ext_f] = fileparts(out.func);
     text_write = strrep(str_html,'$TEMPLATE',[name_t ext_t]);
     text_write = strrep(text_write,'$ANAT',[name_a ext_a]);
-    text_write = strrep(text_write,'$ANAT_LAYOUT',[name_al ext_al]);
+    text_write = strrep(text_write,'$ANATLAYOUT',[name_al ext_al]);
     text_write = strrep(text_write,'$FUNC',[name_f ext_f]);
     fprintf(hf,'%s',text_write);
     fclose(hf);
