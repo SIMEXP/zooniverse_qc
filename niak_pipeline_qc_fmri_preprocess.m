@@ -188,7 +188,7 @@ for ss = 1:length(list_subject)
     if opt.flag_gif == true
     
        % anat2template
-       ing.img1 = pipe.(['report_' subject]).files_out.anat;
+       ing.img1 = pipe.(['report_' subject]).files_out.layout_anat;
        ing.img2 = template;
        outg = [path_gif 'summary_' subject '_anat2template.gif'];
        optg.ratio = opt.gif.ratio;
