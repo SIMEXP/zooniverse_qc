@@ -12,21 +12,30 @@ opt.psom.max_queued = 8;
 niak_pipeline_qc_fmri_preprocess(files_in,opt);
 
 %athena
-path_fmri_preproc = '/media/yassinebha/database25/zooniverse_project/adhd200_fmri_preprocess_athena/';
-
-list_subject = {(dir([path_fmri_preproc 'anat'])).name};
-list_subject = list_subject(~ismember(list_subject,{'.','..','octave-wokspace','octave-core'}));
-for ll = 1:length(list_subject)
-    subject = list_subject{ll};
-    path_subj = [path_fmri_preproc 'anat/' subject '/'];
-    subject_id = ['X_' subject];
-    files_in.anat.(subject_id) = [path_subj (dir([path_subj '*anat*'])).name];
-    files_in.func.(subject_id) = [path_subj (dir([path_subj '*rest_1*'])).name];
+path_fmri_preproc = '/gs/project/gsf-624-aa/adhd200_preproc/athena/';
+list_sites = dir(path_fmri_preproc);
+dirFlags = [list_sites.isdir];
+list_sites = list_sites(dirFlags);
+list_sites = {list_sites.name};
+list_sites = list_sites(~ismember(list_sites,{'.','..','octave-wokspace','octave-core','qc_report'}));
+for ss = 1:length(list_sites)
+    site = list_sites{ss};
+    list_subject = dir([path_fmri_preproc site filesep]);
+    dirFlags = [list_subject.isdir];
+    list_subject = list_subject(dirFlags);
+    list_subject = {list_subject.name};
+    list_subject = list_subject(~ismember(list_subject,{'.','..','octave-wokspace','octave-core','motion'}));
+    for ll = 1:length(list_subject)
+        subject = list_subject{ll};
+        path_subj = [path_fmri_preproc site filesep subject filesep];
+        subject_id = ['X_' subject];
+        files_in.anat.(subject_id) = [path_subj (dir([path_subj '*_anat.nii.gz'])).name];
+        files_in.func.(subject_id) = [path_subj (dir([path_subj 'wmean*_rest_1.nii.gz'])).name];
+    end
 end
 
-niak_gb_vars
-files_in.template = [gb_niak_path_template 'mni-models_icbm152-nl-2009-1.0/mni_icbm152_t1_tal_nlin_sym_09a.mnc.gz'];
-opt.folder_out = '/media/yassinebha/database25/zooniverse_project/zooniverse_adhd200_athena/';
+files_in.template = which('mni_icbm152_t1_tal_nlin_asym_09a.mnc.gz');
+files_in.template_layout = which('mni_icbm152_t1_tal_nlin_asym_09a_outline_registration.mnc');
+opt.folder_out = '/gs/project/gsf-624-aa/adhd200_preproc/zooniverse_report_athena/';
 opt.gif.transition_delay = [0.3 0.15 0.4 0.15];
-opt.psom.max_queued = 8;
 niak_pipeline_qc_fmri_preprocess(files_in,opt);
