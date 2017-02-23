@@ -1,10 +1,10 @@
 % generate volume layout on stereotaxic space
 
-root_path = '/home/yassinebha/Drive/QC_zooniverse/template_layout/';
-path_layout = [root_path 'layout/'];
+root_path = '/media/yassinebha/database29/Drive/';
+path_layout = [root_path 'QC_zooniverse/template_layout/layout/'];
 list_layout = {(dir([path_layout 'left_*.nii.gz'])).name};
 
-[hdr,vol] = niak_read_vol ([root_path 'mni_icbm152_gm_tal_nlin_sym_09a.nii.gz']);
+[hdr,vol] = niak_read_vol ([root_path 'QC_zooniverse/template_layout/mni_icbm152_gm_tal_nlin_sym_09a.nii.gz']);
 vol_final = zeros(size(vol));
 for ii=1:length(list_layout)
     fprintf('%s\n',list_layout{ii}(6:end-7))
@@ -31,25 +31,26 @@ for ii=1:length(list_layout)
 end
 
 % Extract the brain outline
-[hdr,vol] = niak_read_vol ([root_path 'mni_icbm152_t1_tal_nlin_sym_09a_mask.nii.gz']);
-niak_montage (vol)
-vol_e = niak_morph (vol,'-successive EE');
-niak_montage (vol + vol_e)
-vol_d = niak_morph (vol,'-successive DD');
-niak_montage (vol+vol_d)
-vol_f = vol_d & ~vol_e;
-niak_montage (vol_f)
-hdr.file_name = [path_layout 'mask_layout/mask_outline_brain.nii.gz'];
-niak_write_vol (hdr,vol_f);
+%%%[hdr,vol] = niak_read_vol ([root_path 'mni_icbm152_t1_tal_nlin_sym_09a_mask.nii.gz']);
+%%%niak_montage (vol)
+%%%vol_e = niak_morph (vol,'-successive EE');
+%%%niak_montage (vol + vol_e)
+%%%vol_d = niak_morph (vol,'-successive DD');
+%%%niak_montage (vol+vol_d)
+%%%vol_f = vol_d & ~vol_e;
+%%%niak_montage (vol_f)
+%%%hdr.file_name = [path_layout 'mask_layout/mask_outline_brain.nii.gz'];
+%%%niak_write_vol (hdr,vol_f);
 
 
 % write final volume layout
+[hdr_f,vol_f] = niak_read_vol ([path_layout 'mask_outline_brain_bold.nii.gz']);
 vol_final = vol_final | vol_f;
-hdr.file_name = [path_layout 'mask_layout/mask_all_layout.nii.gz'];
+hdr.file_name = [path_layout 'mask_layout/mask_all_layout_v2.nii.gz'];
 niak_write_vol (hdr,vol_final);
 
 % smooth final volume layout
 vol_final_s = niak_morph (vol_final,'-successive DDEE');
 niak_montage (vol_final_s)
-hdr.file_name =  [path_layout 'mask_layout/mask_all_layout_smoothed.nii.gz'];
+hdr.file_name =  [path_layout 'mask_layout/mask_all_layout_v2_smoothed.nii.gz'];
 niak_write_vol (hdr,vol_final_s);
