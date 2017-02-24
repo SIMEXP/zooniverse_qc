@@ -8,22 +8,20 @@ function pipe = niak_pipeline_qc_fmri_preprocess(in,opt)
 %   field names. 
 % IN.FUNC.(SUBJECT) (string) the file name of an individual functional volume (in stereotaxic space)
 %   Labels SUBJECT need to be consistent with IN.ANAT. 
-% IN.TEMPLATE   (string) the file name of the template used for registration in stereotaxic space.
-% IN.TEMPLATE_LAYOUT   (string) the file name of the template layout in stereotaxic space for QC landmarks.
-%    If left empty no layout overlay will be applyed to the template image.
-% OPT.FOLDER_OUT (string) where to generate the outputs. 
-% OPT.COORD       (array N x 3) Coordinates for the figure. The default is:
+% IN.ANAT_TEMPLATE  (string) the file name of the anatomical template used as referene for visual QC.
+% IN.FUNC_TEMPLATE  (string) the file name of the functional template to be used as referene for visual QC.
+% IN.LAYOUT_ANAT    ((string) the file name of the template layout in stereotaxic space for anattomical QC landmarks.
+%    If left empty no layout overlay will be applayed to the anat_template image.
+% IN.LAYOUT_FUNC    (string) the file name of the functional template layout in stereotaxic space for functional QC landmarks.
+%    If left empty no layout overlay will be applayed to the template image.
+% OPT.FOLDER_OUT    (string) where to generate the outputs. 
+% OPT.COORD         (array N x 3) Coordinates for the figure. The default is:
 %                               [-30 , -65 , -15 ; 
-%                                  -8 , -25 ,  10 ;  
+%                                 -8 , -25 ,  10 ;  
 %                                 30 ,  45 ,  60];
 % OPT.FLAG_DECORATION (boolean, default true) if the flag is true, produce a regular figure
 %    with axis, title and colorbar. Otherwise just output the plain mosaic. 
-% OPT.GIF
-%    structure with the folowing fields:
-%    RATIO (float,  default 0.6) it reduce image size, numbers can range from 0.1 to 1
-%    ALPHA (integer, default 3) Number of transition frames betwenen to images to build the gif animation
-%    TRANSITION_DELAY (array 1 x N , where N = alpha +1, default delay time  = 0.3). Delay time betwen frames.
-% OPT.FLAG_LAYOUT (boolean, default false) if the flag is true, the pipeline will generate layout images on images
+% OPT.FLAG_LAYOUT (boolean, default True) if the flag is "flase", the pipeline will not generate layout over anat and func images
 % OPT.PSOM (structure) options for PSOM. See PSOM_RUN_PIPELINE.
 % OPT.FLAG_VERBOSE (boolean, default true) if true, verbose on progress. 
 % OPT.FLAG_TEST (boolean, default false) if the flag is true, the pipeline will 
@@ -63,8 +61,8 @@ psom_gb_vars;
 
 % Inputs
 in = psom_struct_defaults( in , ...
-    { 'anat' , 'template' , 'template_layout' , 'func' }, ...
-    { NaN    , NaN        ,  ''              , NaN    });
+    { 'anat' , 'anat_template' , 'func_template' , 'layout_func' , 'layout_anat', 'func' }, ...
+    { NaN    , NaN             , NaN             , ''            , ''           , NaN    });
 
 if ~isstruct(in.anat)
     error('IN.ANAT needs to be a structure');
@@ -88,59 +86,49 @@ coord_def =[-30 , -65 , -15 ;...
             -8 , -25 ,  10 ; ...  
             30 ,  45 ,  60];
 opt = psom_struct_defaults ( opt , ...
-    { 'folder_out' , 'coord'      , 'flag_decoration', 'gif'    , 'flag_test' , 'psom'   , 'flag_layout' , 'flag_verbose' }, ...
-    { pwd          , coord_def    , true             , struct() , false       , struct() , false         , true  });
+    { 'folder_out' , 'coord'      , 'flag_decoration',   'flag_test' , 'psom'   , 'flag_layout' , 'flag_verbose' }, ...
+    { pwd          , coord_def    , true             ,   false       , struct() , True         , true  });
 opt.folder_out = niak_full_path(opt.folder_out);
 opt.psom.path_logs = [opt.folder_out 'logs' filesep];
 
-%% Check Gif generation
-if sum(isfield (opt.gif,{'alpha','ratio','transition_delay'})) >= 1
-   opt.flag_gif = true;
-   path_gif = [opt.folder_out 'zooniverse_gif' filesep];
-   
-   opt.gif = psom_struct_defaults ( opt.gif , ...
-        { 'ratio' , 'alpha' , 'transition_delay' }, ...
-        { 0.6     , 3       , []                 });
-   opt.flag_decoration = false;
-else 
-   opt.flag_gif = false;
-end
-
-%% Add the summary for the template
+%% Add the summary for the anat_template
 pipe = struct;
 inj.anat = 'gb_niak_omitted';
 inj.func = 'gb_niak_omitted';
-inj.template = in.template;
-inj.layout = 'gb_niak_omitted';
+inj.anat_template = in.anat_template;
+inj.func_template = in.func_template;
+inj.layout_anat = 'gb_niak_omitted';
+inj.layout_func = 'gb_niak_omitted';
 outj.anat = 'gb_niak_omitted';
 outj.func = 'gb_niak_omitted';
-outj.template = [opt.folder_out 'summary_template.jpg'];
-outj.layout_template = 'gb_niak_omitted';
+outj.anat_template = [opt.folder_out 'summary_anat_template.jpg'];
+outj.layout_anat_template = 'gb_niak_omitted';
+outj.layout_func_template = 'gb_niak_omitted';
 outj.layout_anat = 'gb_niak_omitted';
+outj.layout_func = 'gb_niak_omitted';
 outj.report =  'gb_niak_omitted';
 optj.coord = opt.coord;
 optj.flag_decoration = opt.flag_decoration;
 optj.id = 'MNI152';
-pipe = psom_add_job(pipe,'summary_template','niak_brick_qc_fmri_preprocess',inj,outj,optj);
+pipe = psom_add_job(pipe,'summary_anat_template','niak_brick_qc_fmri_preprocess',inj,outj,optj);
 
-%% Add layout on template
-if ~isempty(in.template_layout)
-    opt.flag_layout = true;
-    inj.anat = 'gb_niak_omitted';
-    inj.func = 'gb_niak_omitted';
-    inj.template = in.template;
-    inj.layout = in.template_layout;
-    outj.anat = 'gb_niak_omitted';
-    outj.func = 'gb_niak_omitted';
-    outj.template = niak_file_tmp('summary_template.jpg');
-    outj.layout_template = [opt.folder_out 'summary_template_layout.jpg'];
-    outj.layout_anat = 'gb_niak_omitted';
-    outj.report =  'gb_niak_omitted';
-    optj.coord = opt.coord;
-    optj.flag_decoration = opt.flag_decoration;
-    optj.id = 'MNI152_layout';
-    pipe = psom_add_job(pipe,'summary_template_layout','niak_brick_qc_fmri_preprocess',inj,outj,optj);
-    pipe = psom_add_clean(pipe,'clean_summary_template_layout',outj.template);
+%% Add layout on anat_template
+if opt.flag_layout
+  inj.anat = 'gb_niak_omitted';
+  inj.func = 'gb_niak_omitted';
+  inj.template = in.template;
+  inj.layout_anat = in.layout_anat;
+  outj.anat = 'gb_niak_omitted';
+  outj.func = 'gb_niak_omitted';
+  outj.template = niak_file_tmp('summary_template.jpg');
+  outj.layout_template = [opt.folder_out 'summary_template_layout.jpg'];
+  outj.layout_anat = 'gb_niak_omitted';
+  outj.report =  'gb_niak_omitted';
+  optj.coord = opt.coord;
+  optj.flag_decoration = opt.flag_decoration;
+  optj.id = 'MNI152_layout';
+  pipe = psom_add_job(pipe,'summary_template_layout','niak_brick_qc_fmri_preprocess',inj,outj,optj);
+  pipe = psom_add_clean(pipe,'clean_summary_template_layout',outj.template);
 else
     opt.flag_layout = false;
 end
