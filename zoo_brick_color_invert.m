@@ -37,21 +37,12 @@ function [in,out,opt] = zoo_brick_color_invert(in,out,opt)
 in = psom_struct_defaults( in , ...
     { 'source' , 'mask' }, ...
     { NaN      , NaN    });
-
-% Outputs
-if (nargin < 2) || isempty(out)
-    out = struct;
-end
-out = psom_struct_defaults( out ,{ 'image' },{ '' });
+if ~ischar(out); error('OUT should be a string'); end;
 
 % Options
 opt = psom_struct_defaults ( opt , ...
-    { 'folder_out' , 'perc_max' , 'perc_min' , 'transparency', 'flag_test' }, ...
-    { pwd          , 0.95       , 0.05       , 0.7           , false       });
-
-if isempty(out.image)
-  out.image = [opt.folder_out filesep 'images_inv.nii.gz'];
-end
+    { 'perc_max' , 'perc_min' , 'transparency', 'flag_test' }, ...
+    { 0.95       , 0.05       , 0.7           , false       });
 
 if opt.flag_test
     return
@@ -59,7 +50,7 @@ end
 
 %% Check the extension of the output
 
-[path_f,name_f,ext_f] = fileparts(out.image);
+[path_f,name_f,ext_f] = fileparts(out);
 
 %% Read the data
 [hdr_source,source] = niak_read_vol(in.source);
@@ -76,5 +67,5 @@ source(mask) = (source(mask) - vmin)/(vmax-vmin);
 source(~mask) = 0;
 source = 1 - source;
 source = sqrt(source);
-hdr_source.file_name = out.image;
+hdr_source.file_name = out;
 niak_write_vol(hdr_source,source);

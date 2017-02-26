@@ -139,8 +139,6 @@ else
   file_outline_func = in.template.func_outline;
 end
 
-%% Build file names
-
 %% Copy and update the report templates
 pipeline = struct;
 clear jin jout jopt
@@ -151,12 +149,10 @@ jout = strrep(jin,path_template,opt.folder_out);
 jopt.folder_out = opt.folder_out;
 pipeline = psom_add_job(pipeline,'cp_report_templates','niak_brick_copy',jin,jout,jopt);
 
-%% Generate group images
+%% Generate template montage images
 clear jin jout jopt
 jin.target = in.template.anat;
 jopt.coord = opt.coord;
-jopt.colorbar = true;
-
 % Template anat
 jin.source = in.template.anat;
 jout = [opt.folder_out 'group' filesep 'template_anat_stereotaxic_raw.png'];
@@ -164,8 +160,7 @@ jopt.colormap = 'gray';
 jopt.colorbar = false;
 jopt.limits = 'adaptative';
 jopt.flag_decoration = false;
-pipeline = psom_add_job(pipeline,'template_anat_stereo','niak_brick_vol2img',jin,jout,jopt);
-
+pipeline = psom_add_job(pipeline,'montage_template_anat','niak_brick_vol2img',jin,jout,jopt);
 % Template func
 if ~isempty(in.template.func)
   jin.source = in.template.func;
@@ -174,21 +169,27 @@ if ~isempty(in.template.func)
   jopt.colorbar = false;
   jopt.limits = 'adaptative';
   jopt.flag_decoration = false;
-  pipeline = psom_add_job(pipeline,'template_func_stereo','niak_brick_vol2img',jin,jout,jopt);
+  pipeline = psom_add_job(pipeline,'motage_template_func','niak_brick_vol2img',jin,jout,jopt);
 else
+  clear jin jout jopt
   jin.source = in.group.avg_func;
   jin.mask = in.group.mask_func_group;
   jout = [opt.folder_out 'group' filesep 'template_func_invert.png'];
   pipeline = psom_add_job(pipeline,'template_func_inv','zoo_brick_color_invert',jin,jout,jopt);
 
-  % Generate montage from functional template
+  % Generate montage
+  clear jin jout jopt
+  jin.target = in.template.anat;
+  jopt.coord = opt.coord;
+
   jin.source = pipeline.template_func_inv.files_out;
   jout = [opt.folder_out 'group' filesep 'template_func_stereotaxic_raw.png'];
   jopt.colormap = 'gray';
   jopt.colorbar = false;
   jopt.limits = 'adaptative';
   jopt.flag_decoration = false;
-  pipeline = psom_add_job(pipeline,'template_func_stereo','niak_brick_vol2img',jin,jout,jopt);
+  pipeline = psom_add_job(pipeline,'montage_template_func','niak_brick_vol2img',jin,jout,jopt);
+end
 
 %% Group outline
 % anat
@@ -197,28 +198,37 @@ jout = [opt.folder_out 'group' filesep 'outline_anat.png'];
 jopt.colormap = 'jet';
 jopt.limits = [0 1.1];
 jopt.flag_decoration = false;
-pipeline = psom_add_job(pipeline,'anat_outline_registration','niak_brick_vol2img',jin,jout,jopt);
+pipeline = psom_add_job(pipeline,'montage_anat_outline','niak_brick_vol2img',jin,jout,jopt);
 % func
 jin.source = file_outline_func;
 jout = [opt.folder_out 'group' filesep 'outline_func.png'];
 jopt.colormap = 'jet';
 jopt.limits = [0 1.1];
 jopt.flag_decoration = false;
-pipeline = psom_add_job(pipeline,'func_outline_registration','niak_brick_vol2img',jin,jout,jopt);
+pipeline = psom_add_job(pipeline,'montage_func_outline','niak_brick_vol2img',jin,jout,jopt);
 
 %% Merge templte and outline
 % anat
 clear jin jout jopt
-jin.background = pipeline.template_stereo.files_out;
-jin.overlay = pipeline.t1_outline_registration.files_out;
+jin.background = pipeline.montage_template_anat.files_out;
+jin.overlay = pipeline.montage_anat_outline.files_out;
+jout = [opt.folder_out 'group' filesep 'anat_template_outline_stereotaxic.png'];
+jopt.transparency = 0.7;
+jopt.threshold = 0.9;
+pipeline = psom_add_job(pipeline,'overlay_outlline_anat_template','niak_brick_add_overlay',jin,jout,jopt);
+% func
+jin.background = pipeline.montage_template_func.files_out;
+jin.overlay = pipeline.montage_func_outline.files_out;
 jout = [opt.folder_out 'group' filesep 'template_stereotaxic.png'];
 jopt.transparency = 0.7;
 jopt.threshold = 0.9;
-pipeline = psom_add_job(pipeline,'template_stereo_overlay','niak_brick_add_overlay',jin,jout,jopt);
+pipeline = psom_add_job(pipeline,'overlay_outlline_func_template','niak_brick_add_overlay',jin,jout,jopt);
 
 %% Panel on individual registration
-
 % Individual T1 images
+clear jin jout jopt
+jin.target = in.template.anat;
+jopt.coord = opt.coord;
 jopt.colormap = 'gray';
 jopt.limits = 'adaptative';
 jopt.method = 'linear';
@@ -228,14 +238,10 @@ for ss = 1:length(list_subject)
     jopt.flag_decoration = false;
     pipeline = psom_add_job(pipeline,['t1_' list_subject{ss}],'niak_brick_vol2img',jin,jout,jopt);
 end
-
 % Individual BOLD images
-jopt.colormap = 'jet';
-jopt.limits = 'adaptative';
-jopt.method = 'linear';
 for ss = 1:length(list_subject)
     jin.source = in.ind.func.(list_subject{ss});
-    jout = [opt.folder_out 'registration' filesep list_subject{ss} '_func.png'];
+    jout = [opt.folder_out 'registration' filesep list_subject{ss} '_func_raw.png'];
     jopt.flag_decoration = false;
     pipeline = psom_add_job(pipeline,['bold_' list_subject{ss}],'niak_brick_vol2img',jin,jout,jopt);
 end
@@ -244,11 +250,21 @@ end
 for ss = 1:length(list_subject)
     clear jin jout jopt
     jin.background = pipeline.(['t1_' list_subject{ss}]).files_out;
-    jin.overlay = pipeline.t1_outline_registration.files_out;
+    jin.overlay = pipeline.overlay_outlline_anat_template.files_out;
     jout = [opt.folder_out 'registration' filesep list_subject{ss} '_anat.png'];
     jopt.transparency = 0.7;
     jopt.threshold = 0.9;
     pipeline = psom_add_job(pipeline,['t1_' list_subject{ss} '_overlay'],'niak_brick_add_overlay',jin,jout,jopt);
+end
+% Merge individual funt and outline
+for ss = 1:length(list_subject)
+    clear jin jout jopt
+    jin.background = pipeline.(['bold_' list_subject{ss}]).files_out;
+    jin.overlay = pipeline.overlay_outlline_func_template.files_out;
+    jout = [opt.folder_out 'registration' filesep list_subject{ss} '_func.png'];
+    jopt.transparency = 0.7;
+    jopt.threshold = 0.9;
+    pipeline = psom_add_job(pipeline,['bold_' list_subject{ss} '_overlay'],'niak_brick_add_overlay',jin,jout,jopt);
 end
 
 % Add a spreadsheet to write the QC.
@@ -256,6 +272,20 @@ clear jin jout jopt
 jout = [opt.folder_out 'qc_registration.csv'];
 jopt.list_subject = list_subject;
 pipeline = psom_add_job(pipeline,'init_report','niak_brick_init_qc_report','',jout,jopt);
+
+% Manifest file for anat workflow
+clear jin jout jopt
+jout = [opt.folder_out 'anat_manifest_file.csv'];
+jopt.list_subject = list_subject;
+jopt.modality ='anat'
+pipeline = psom_add_job(pipeline,'anat_manifest','zoo_brick_manifest','',jout,jopt);
+
+% Manifest file for func workflow
+clear jin jout jopt
+jout = [opt.folder_out 'func_manifest_file.csv'];
+jopt.list_subject = list_subject;
+jopt.modality ='func'
+pipeline = psom_add_job(pipeline,'func_manifest','zoo_brick_manifest','',jout,jopt);
 
 if ~opt.flag_test
     psom_run_pipeline(pipeline,opt.psom);
