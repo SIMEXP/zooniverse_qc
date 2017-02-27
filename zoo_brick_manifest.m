@@ -60,7 +60,7 @@ end
 %% Initialize the manifest file
 manifest_report = cell(length(opt.list_subject)+1,3);
 manifest_report(2:end,1) = opt.list_subject;
-manifest_report(2:end,2) = strcat(opt.list_subject,'_',opt.modality,'.png';
+manifest_report(2:end,2) = strcat(opt.list_subject,'_',opt.modality,'.png');
 manifest_report(2:end,3) = repmat({[opt.modality '_template_stereotaxic.png']},[length(opt.list_subject),1]);
 manifest_report(1,1) = 'subject_ID';
 manifest_report(1,2) = 'image1';

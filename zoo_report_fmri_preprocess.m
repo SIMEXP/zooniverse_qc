@@ -175,7 +175,8 @@ else
   clear jin jout jopt
   jin.source = in.group.avg_func;
   jin.mask = in.group.mask_func_group;
-  jout = [opt.folder_out 'group' filesep 'func_template_stereotaxic_invert.png'];
+  jout = [opt.folder_out 'group' filesep 'func_template_stereotaxic_invert.nii.gz'];
+  jopt = struct;
   pipeline = psom_add_job(pipeline,'template_func_inv','zoo_brick_color_invert',jin,jout,jopt);
 
   % Generate montage
@@ -249,9 +250,10 @@ end
 % Invert BOLD images colormap
 for ss = 1:length(list_subject)
     clear jin jout jopt
-    jin.source = pipeline.['bold_raw_' list_subject{ss}].files_out;
+    jin.source = in.ind.func.(list_subject{ss});
     jin.mask = in.group.mask_func_group;
-    jout = [opt.folder_out 'registration' filesep list_subject{ss} '_func_raw_inv.png'];
+    jout = [opt.folder_out 'registration' filesep list_subject{ss} '_func_raw_inv.nii.gz'];
+    jopt = struct;
     pipeline = psom_add_job(pipeline,['bold_raw_inv_' list_subject{ss}],'zoo_brick_color_invert',jin,jout,jopt);
 end
 
@@ -286,14 +288,14 @@ pipeline = psom_add_job(pipeline,'init_report','niak_brick_init_qc_report','',jo
 clear jin jout jopt
 jout = [opt.folder_out 'anat_manifest_file.csv'];
 jopt.list_subject = list_subject;
-jopt.modality ='anat'
+jopt.modality ='anat';
 pipeline = psom_add_job(pipeline,'anat_manifest','zoo_brick_manifest','',jout,jopt);
 
 % Manifest file for func workflow
 clear jin jout jopt
 jout = [opt.folder_out 'func_manifest_file.csv'];
 jopt.list_subject = list_subject;
-jopt.modality ='func'
+jopt.modality ='func';
 pipeline = psom_add_job(pipeline,'func_manifest','zoo_brick_manifest','',jout,jopt);
 
 if ~opt.flag_test
