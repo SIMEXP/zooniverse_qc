@@ -269,7 +269,7 @@ end
 for ss = 1:length(list_subject)
     clear jin jout jopt
     jin.background = pipeline.(['t1_raw_montage_' list_subject{ss}]).files_out;
-    jin.overlay = pipeline.overlay_outlline_anat_template.files_out;
+    jin.overlay = pipeline.montage_anat_outline.files_out;
     jout = [opt.folder_out 'registration' filesep list_subject{ss} '_anat.png'];
     jopt.transparency = 0.7;
     jopt.threshold = 0.9;
@@ -280,7 +280,7 @@ end
 for ss = 1:length(list_subject)
     clear jin jout jopt
     jin.background = pipeline.(['bold_raw_montage_' list_subject{ss}]).files_out;
-    jin.overlay = pipeline.overlay_outlline_func_template.files_out;
+    jin.overlay = pipeline.montage_func_outline.files_out;
     jout = [opt.folder_out 'registration' filesep list_subject{ss} '_func.png'];
     jopt.transparency = 0.7;
     jopt.threshold = 0.9;

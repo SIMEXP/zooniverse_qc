@@ -53,8 +53,8 @@ end
 [path_f,name_f,ext_f] = fileparts(out);
 
 %% Read the data
-[hdr_source,source] = niak_read_vol(in.source);
-[hdr_mask,mask]     = niak_read_vol(in.mask);
+[hdr,source] = niak_read_vol(in.source);
+[hdr,mask]   = niak_read_vol(in.mask);
 
 % Invert image
 mask = mask>0;
@@ -67,5 +67,5 @@ source(mask) = (source(mask) - vmin)/(vmax-vmin);
 source(~mask) = 0;
 source = 1 - source;
 source = sqrt(source);
-hdr_source.file_name = out;
-niak_write_vol(hdr_source,source);
+hdr.file_name = out;
+niak_write_vol(hdr,source);
