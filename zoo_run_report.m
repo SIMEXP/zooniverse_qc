@@ -5,6 +5,10 @@ path_fmri_preproc = '/gs/scratch/pbellec/cobre_fmri_preprocess_nii_20160920/';
 files_in  = niak_grab_qc_fmri_preprocess(path_fmri_preproc);
 in.ind.anat = files_in.anat;
 in.ind.func = files_in.func;
+%%%% for debugging only 10 subjects %%%%
+in.ind.anat = rmfield(in.ind.anat,fieldnames(in.ind.anat)(11:end));
+in.ind.func = rmfield(in.ind.func,fieldnames(in.ind.func)(11:end));
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 in.template.anat = files_in.template;
 in.template.func = '';
 in.group.avg_func = '/gs/scratch/pbellec/cobre_fmri_preprocess_nii_20160920/quality_control/group_coregistration/func_mean_average_stereonl.nii.gz';
