@@ -6,7 +6,7 @@ function [in,out,opt] = zoo_brick_manifest(in,out,opt)
 % IN not used. Available to conform to the syntax of "bricks".
 % OUT (string) the name of spreadsheet with comma-separated values(CSV).
 % OPT.LIST_SUBJECT (cell of strings) the ID of the subject
-% OPT.MODALITY(string) modality to be loaded to zooniverse. Available 't1' or'bold'.
+% OPT.MODALITY(string) modality to be loaded to zooniverse. Available 'anat' or'func'.
 % OPT.FLAG_TEST (boolean, default false) if the flag is true,
 %   nothing is done but update IN, OUT and OPT.
 %
@@ -50,37 +50,21 @@ if opt.flag_test
     return
 end
 
+switch opt.modality
+ case 't1'
+  template = 'anat_template_stereotaxic.png';
+ case 'bold'
+  template = 'func_template_stereotaxic.png';
+end
+
 %% Initialize the manifest file
 manifest_report = cell(length(opt.list_subject)+1,3);
 manifest_report(2:end,1) = opt.list_subject;
-manifest_report(1,1) = 'id_subject';
-manifest_report(1,2) = 'QC';
-manifest_report(2:end,2:end) = repmat({''},[length(opt.list_subject),1]);
-
-% Fill the manifest file
-for ss = 1:length(opt.list_subject)
-  if ss == 1
-    manifest_report{ss,1} = [subject '_anat'] ;
-    manifest_report{ss,2} = [ 'summary_' subject '_anat2template.gif'];
-    manifest_report{ss+1,1} = [subject '_func'];
-    manifest_report{ss+1,2} = [ 'summary_' subject '_func2anat.gif'];
-  else
-    manifest_report{ss+n_shift,1} = [subject '_anat'] ;
-    manifest_report{ss+n_shift,2} = [ 'summary_' subject '_anat2template.gif'];
-    manifest_report{ss+n_shift+1,1} = [subject '_func'] ;
-    manifest_report{ss+n_shift+1,2} = [ 'summary_' subject '_func2anat.gif'];
-  end
-  n_shift = n_shift+1;
-end
-
-% Save manifest file
-if opt.flag_gif == true
-   header_labels = {'subject_ID','images'};
-   manifest_report_final = [header_labels ; manifest_report];
-   niak_mkdir(path_gif);
-   file_name = [path_gif 'zooniverse_manifest_file.csv'];
-   niak_write_csv_cell(file_name,manifest_report_final);
-end
+manifest_report(2:end,2) = strcat(opt.list_subject,'_',opt.modality,'.png';
+manifest_report(2:end,3) = repmat({[opt.modality '_template_stereotaxic.png']},[length(opt.list_subject),1]);
+manifest_report(1,1) = 'subject_ID';
+manifest_report(1,2) = 'image1';
+manifest_report(1,3) = 'image2';
 
 %% Save the report
 niak_write_csv_cell(out,manifest_report);

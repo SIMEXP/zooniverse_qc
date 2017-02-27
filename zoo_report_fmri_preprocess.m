@@ -155,7 +155,7 @@ jin.target = in.template.anat;
 jopt.coord = opt.coord;
 % Template anat
 jin.source = in.template.anat;
-jout = [opt.folder_out 'group' filesep 'template_anat_stereotaxic_raw.png'];
+jout = [opt.folder_out 'group' filesep 'anat_template_stereotaxic_raw.png'];
 jopt.colormap = 'gray';
 jopt.colorbar = false;
 jopt.limits = 'adaptative';
@@ -164,17 +164,18 @@ pipeline = psom_add_job(pipeline,'montage_template_anat','niak_brick_vol2img',ji
 % Template func
 if ~isempty(in.template.func)
   jin.source = in.template.func;
-  jout = [opt.folder_out 'group' filesep 'template_func_stereotaxic_raw.png'];
+  jout = [opt.folder_out 'group' filesep 'func_template_stereotaxic_raw.png'];
   jopt.colormap = 'gray';
   jopt.colorbar = false;
   jopt.limits = 'adaptative';
   jopt.flag_decoration = false;
-  pipeline = psom_add_job(pipeline,'motage_template_func','niak_brick_vol2img',jin,jout,jopt);
+  pipeline = psom_add_job(pipeline,'montage_template_func','niak_brick_vol2img',jin,jout,jopt);
 else
+  % Invert the average func colormap
   clear jin jout jopt
   jin.source = in.group.avg_func;
   jin.mask = in.group.mask_func_group;
-  jout = [opt.folder_out 'group' filesep 'template_func_invert.png'];
+  jout = [opt.folder_out 'group' filesep 'func_template_stereotaxic_invert.png'];
   pipeline = psom_add_job(pipeline,'template_func_inv','zoo_brick_color_invert',jin,jout,jopt);
 
   % Generate montage
@@ -183,7 +184,7 @@ else
   jopt.coord = opt.coord;
 
   jin.source = pipeline.template_func_inv.files_out;
-  jout = [opt.folder_out 'group' filesep 'template_func_stereotaxic_raw.png'];
+  jout = [opt.folder_out 'group' filesep 'func_template_stereotaxic_raw.png'];
   jopt.colormap = 'gray';
   jopt.colorbar = false;
   jopt.limits = 'adaptative';
@@ -212,14 +213,14 @@ pipeline = psom_add_job(pipeline,'montage_func_outline','niak_brick_vol2img',jin
 clear jin jout jopt
 jin.background = pipeline.montage_template_anat.files_out;
 jin.overlay = pipeline.montage_anat_outline.files_out;
-jout = [opt.folder_out 'group' filesep 'anat_template_outline_stereotaxic.png'];
+jout = [opt.folder_out 'group' filesep 'anat_template_stereotaxic.png'];
 jopt.transparency = 0.7;
 jopt.threshold = 0.9;
 pipeline = psom_add_job(pipeline,'overlay_outlline_anat_template','niak_brick_add_overlay',jin,jout,jopt);
 % func
 jin.background = pipeline.montage_template_func.files_out;
 jin.overlay = pipeline.montage_func_outline.files_out;
-jout = [opt.folder_out 'group' filesep 'template_stereotaxic.png'];
+jout = [opt.folder_out 'group' filesep 'func_template_stereotaxic.png'];
 jopt.transparency = 0.7;
 jopt.threshold = 0.9;
 pipeline = psom_add_job(pipeline,'overlay_outlline_func_template','niak_brick_add_overlay',jin,jout,jopt);
@@ -243,7 +244,15 @@ for ss = 1:length(list_subject)
     jin.source = in.ind.func.(list_subject{ss});
     jout = [opt.folder_out 'registration' filesep list_subject{ss} '_func_raw.png'];
     jopt.flag_decoration = false;
-    pipeline = psom_add_job(pipeline,['bold_' list_subject{ss}],'niak_brick_vol2img',jin,jout,jopt);
+    pipeline = psom_add_job(pipeline,['bold_raw_' list_subject{ss}],'niak_brick_vol2img',jin,jout,jopt);
+end
+% Invert BOLD images colormap
+for ss = 1:length(list_subject)
+    clear jin jout jopt
+    jin.source = pipeline.['bold_raw_' list_subject{ss}].files_out;
+    jin.mask = in.group.mask_func_group;
+    jout = [opt.folder_out 'registration' filesep list_subject{ss} '_func_raw_inv.png'];
+    pipeline = psom_add_job(pipeline,['bold_raw_inv_' list_subject{ss}],'zoo_brick_color_invert',jin,jout,jopt);
 end
 
 % Merge individual T1 and outline
@@ -256,10 +265,10 @@ for ss = 1:length(list_subject)
     jopt.threshold = 0.9;
     pipeline = psom_add_job(pipeline,['t1_' list_subject{ss} '_overlay'],'niak_brick_add_overlay',jin,jout,jopt);
 end
-% Merge individual funt and outline
+% Merge individual func and outline
 for ss = 1:length(list_subject)
     clear jin jout jopt
-    jin.background = pipeline.(['bold_' list_subject{ss}]).files_out;
+    jin.background = pipeline.(['bold_raw_inv_' list_subject{ss}]).files_out;
     jin.overlay = pipeline.overlay_outlline_func_template.files_out;
     jout = [opt.folder_out 'registration' filesep list_subject{ss} '_func.png'];
     jopt.transparency = 0.7;
