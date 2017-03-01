@@ -8,19 +8,20 @@ function pipe = niak_pipeline_qc_fmri_preprocess(in,opt)
 %   field names. 
 % IN.FUNC.(SUBJECT) (string) the file name of an individual functional volume (in stereotaxic space)
 %   Labels SUBJECT need to be consistent with IN.ANAT. 
-% IN.TEMPLATE   (string) the file name of the template used for registration in stereotaxic space.
-% OPT.FOLDER_OUT (string) where to generate the outputs. 
-% OPT.COORD       (array N x 3) Coordinates for the figure. The default is:
+% IN.ANAT_TEMPLATE  (string) the file name of the anatomical template used as referene for visual QC.
+% IN.FUNC_TEMPLATE  (string) the file name of the functional template to be used as referene for visual QC.
+% IN.LAYOUT_ANAT    ((string) the file name of the template layout in stereotaxic space for anattomical QC landmarks.
+%    If left empty no layout overlay will be applayed to the anat_template image.
+% IN.LAYOUT_FUNC    (string) the file name of the functional template layout in stereotaxic space for functional QC landmarks.
+%    If left empty no layout overlay will be applayed to the template image.
+% OPT.FOLDER_OUT    (string) where to generate the outputs. 
+% OPT.COORD         (array N x 3) Coordinates for the figure. The default is:
 %                               [-30 , -65 , -15 ; 
-%                                  -8 , -25 ,  10 ;  
+%                                 -8 , -25 ,  10 ;  
 %                                 30 ,  45 ,  60];
 % OPT.FLAG_DECORATION (boolean, default true) if the flag is true, produce a regular figure
 %    with axis, title and colorbar. Otherwise just output the plain mosaic. 
-% OPT.GIF
-%    structure with the folowing fields:
-%    RATIO (float,  default 0.6) it reduce image size, numbers can range from 0.1 to 1
-%    ALPHA (integer, default 3) Number of transition frames betwenen to images to build the gif animation
-%    TRANSITION_DELAY (array 1 x N , where N = alpha +1, default delay time  = 0.3). Delay time betwen frames.
+% OPT.FLAG_LAYOUT (boolean, default True) if the flag is "flase", the pipeline will not generate layout over anat and func images
 % OPT.PSOM (structure) options for PSOM. See PSOM_RUN_PIPELINE.
 % OPT.FLAG_VERBOSE (boolean, default true) if true, verbose on progress. 
 % OPT.FLAG_TEST (boolean, default false) if the flag is true, the pipeline will 
@@ -60,8 +61,8 @@ psom_gb_vars;
 
 % Inputs
 in = psom_struct_defaults( in , ...
-    { 'anat' , 'template' , 'func' }, ...
-    { NaN   , NaN          , NaN   });
+    { 'anat' , 'anat_template' , 'func_template' , 'layout_func' , 'layout_anat', 'func' }, ...
+    { NaN    , NaN             , NaN             , ''            , ''           , NaN    });
 
 if ~isstruct(in.anat)
     error('IN.ANAT needs to be a structure');
@@ -85,37 +86,59 @@ coord_def =[-30 , -65 , -15 ;...
             -8 , -25 ,  10 ; ...  
             30 ,  45 ,  60];
 opt = psom_struct_defaults ( opt , ...
-    { 'folder_out' , 'coord'      , 'flag_decoration', 'gif'    , 'flag_test' , 'psom'   , 'flag_verbose' }, ...
-    { pwd          , coord_def    , true             , struct() , false       , struct() , true           });
+    { 'folder_out' , 'coord'      , 'flag_decoration',   'flag_test' , 'psom'   , 'flag_layout' , 'flag_verbose' }, ...
+    { pwd          , coord_def    , true             ,   false       , struct() , True         , true  });
 opt.folder_out = niak_full_path(opt.folder_out);
 opt.psom.path_logs = [opt.folder_out 'logs' filesep];
 
-%% Check Gif generation
-if sum(isfield (opt.gif,{'alpha','ratio','transition_delay'})) >= 1
-   flag_gif = true;
-   path_gif = [opt.folder_out 'zooniverse_gif' filesep];
-   
-   opt.gif = psom_struct_defaults ( opt.gif , ...
-        { 'ratio' , 'alpha' , 'transition_delay' }, ...
-        { 0.6     , 3       , []                 });
-   opt.flag_decoration = false;
-end
-
-%% Add the summary for the template
+%% Add the summary for the anat_template
 pipe = struct;
 inj.anat = 'gb_niak_omitted';
 inj.func = 'gb_niak_omitted';
-inj.template = in.template;
+inj.anat_template = in.anat_template;
+inj.func_template = in.func_template;
+inj.layout_anat = 'gb_niak_omitted';
+inj.layout_func = 'gb_niak_omitted';
 outj.anat = 'gb_niak_omitted';
 outj.func = 'gb_niak_omitted';
-outj.template = [opt.folder_out 'summary_template.jpg'];
+outj.anat_template = [opt.folder_out 'summary_anat_template.jpg'];
+outj.layout_anat_template = 'gb_niak_omitted';
+outj.layout_func_template = 'gb_niak_omitted';
+outj.layout_anat = 'gb_niak_omitted';
+outj.layout_func = 'gb_niak_omitted';
 outj.report =  'gb_niak_omitted';
 optj.coord = opt.coord;
 optj.flag_decoration = opt.flag_decoration;
 optj.id = 'MNI152';
-pipe = psom_add_job(pipe,'summary_template','niak_brick_qc_fmri_preprocess',inj,outj,optj);
+pipe = psom_add_job(pipe,'summary_anat_template','niak_brick_qc_fmri_preprocess',inj,outj,optj);
 
+%% Add layout on anat_template
+if opt.flag_layout
+  inj.anat = 'gb_niak_omitted';
+  inj.func = 'gb_niak_omitted';
+  inj.template = in.template;
+  inj.layout_anat = in.layout_anat;
+  outj.anat = 'gb_niak_omitted';
+  outj.func = 'gb_niak_omitted';
+  outj.template = niak_file_tmp('summary_template.jpg');
+  outj.layout_template = [opt.folder_out 'summary_template_layout.jpg'];
+  outj.layout_anat = 'gb_niak_omitted';
+  outj.report =  'gb_niak_omitted';
+  optj.coord = opt.coord;
+  optj.flag_decoration = opt.flag_decoration;
+  optj.id = 'MNI152_layout';
+  pipe = psom_add_job(pipe,'summary_template_layout','niak_brick_qc_fmri_preprocess',inj,outj,optj);
+  pipe = psom_add_clean(pipe,'clean_summary_template_layout',outj.template);
+else
+    opt.flag_layout = false;
+end
 
+if opt.flag_layout == true
+   template = pipe.summary_template_layout.files_out.layout_template;
+   else
+   template = pipe.summary_template.files_out.template;
+end
+   
 %% Add the generation of summary images for all subjects
 n_shift = 0;
 for ss = 1:length(list_subject)
@@ -127,22 +150,34 @@ for ss = 1:length(list_subject)
     inj.anat = in.anat.(subject);
     inj.func = in.func.(subject);
     inj.template = in.template;
+    inj.layout = in.template_layout;
     outj.anat = [opt.folder_out 'summary_' subject '_anat.jpg'];
     outj.func = [opt.folder_out 'summary_' subject '_func.jpg'];
-    outj.template = 'gb_niak_omitted';
+    if opt.flag_layout == true
+       outj.template = niak_file_tmp('summary_template.jpg');
+       outj.layout_template = 'gb_niak_omitted';;
+       outj.layout_anat = [opt.folder_out 'summary_' subject '_anat_layout.jpg'];
+    else
+       outj.template = 'gb_niak_omitted';
+       outj.layout_anat = 'gb_niak_omitted';
+       outj.layout_template = 'gb_niak_omitted';
+    end   
     outj.report =  [opt.folder_out 'report_coregister_' subject '.html'];
     optj.coord = opt.coord;
     optj.flag_decoration = opt.flag_decoration;
+    optj.flag_layout = opt.flag_layout;
     optj.id = subject;
-    optj.template = pipe.summary_template.files_out.template;
+    optj.template = template;
     pipe = psom_add_job(pipe,['report_' subject],'niak_brick_qc_fmri_preprocess',inj,outj,optj);
-    
-    %% Add gif figure for zooniverse platform
-    if flag_gif == true
+    if opt.flag_layout == true
+       pipe = psom_add_clean(pipe,(['clean_report_' subject]),outj.template); 
+    end
+    %% generate gif image for zooniverse platform
+    if opt.flag_gif == true
     
        % anat2template
-       ing.img1 = pipe.(['report_' subject]).files_out.anat;
-       ing.img2 = pipe.summary_template.files_out.template;
+       ing.img1 = pipe.(['report_' subject]).files_out.layout_anat;
+       ing.img2 = template;
        outg = [path_gif 'summary_' subject '_anat2template.gif'];
        optg.ratio = opt.gif.ratio;
        optg.alpha = opt.gif.alpha;
@@ -151,7 +186,11 @@ for ss = 1:length(list_subject)
        
        % func2anat
        ing.img1 = pipe.(['report_' subject]).files_out.func;
-       ing.img2 = pipe.(['report_' subject]).files_out.anat;
+       if opt.flag_layout == true
+          ing.img2 = pipe.(['report_' subject]).files_out.layout_anat;
+       else 
+          ing.img2 = pipe.(['report_' subject]).files_out.anat;
+       end
        outg = [path_gif 'summary_' subject '_func2anat.gif'];
        optg.ratio = opt.gif.ratio;
        optg.alpha = opt.gif.alpha;
@@ -159,27 +198,29 @@ for ss = 1:length(list_subject)
        pipe = psom_add_job(pipe,['gif_report_func2anat_' subject],'niak_brick_img2gif',ing,outg,optg);
        
        % Manifest file creation
-      if ss == 1 
+       if ss == 1 
          tab{ss,1} = [subject '_anat'] ;
          tab{ss,2} = [ 'summary_' subject '_anat2template.gif'];
          tab{ss+1,1} = [subject '_func'];
          tab{ss+1,2} = [ 'summary_' subject '_func2anat.gif'];
-      else
+       else
          tab{ss+n_shift,1} = [subject '_anat'] ;
          tab{ss+n_shift,2} = [ 'summary_' subject '_anat2template.gif'];
          tab{ss+n_shift+1,1} = [subject '_func'] ;
          tab{ss+n_shift+1,2} = [ 'summary_' subject '_func2anat.gif'];
-      end
-      n_shift = n_shift+1;
+       end
+       n_shift = n_shift+1;
     end
 end
 
 %% Save manifest file
-header_labels = {'subject_ID','images'};
-tab_final = [header_labels ; tab];
-niak_mkdir(path_gif);
-file_name = [path_gif 'zooniverse_manifest_file.csv'];
-niak_write_csv_cell(file_name,tab_final);
+if opt.flag_gif == true
+   header_labels = {'subject_ID','images'};
+   tab_final = [header_labels ; tab];
+   niak_mkdir(path_gif);
+   file_name = [path_gif 'zooniverse_manifest_file.csv'];
+   niak_write_csv_cell(file_name,tab_final);
+end
 
 %% Add a spreadsheet to write the QC. 
 clear inj outj optj
@@ -223,7 +264,7 @@ for ww = 1:length(list_wrap)
     else
        subject = list_subject{ww-1}; 
        name_job = ['wrapper_' subject];
-        links_ww = strrep(list_links,sprintf('<li><a href="%s">%s</a></li>\n',['wrapper_'  subject '.html'],subject),sprintf('<li><a class="active" href="%s">%s</a></li>\n',['wrapper_'  subject '.html'],subject));
+       links_ww = strrep(list_links,sprintf('<li><a href="%s">%s</a></li>\n',['wrapper_'  subject '.html'],subject),sprintf('<li><a class="active" href="%s">%s</a></li>\n',['wrapper_'  subject '.html'],subject));
     end 
     str_write = strrep(str_html,'$LINKS',links_ww);
     prev_subject = list_subject{max(1,ww-2)};

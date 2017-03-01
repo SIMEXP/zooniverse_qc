@@ -3,17 +3,18 @@ function [in,out,opt] = niak_brick_qc_fmri_preprocess(in,out,opt)
 %
 % SYNTAX: [IN,OUT,OPT] = NIAK_BRICK_QC_FMRI_PREPROCESS(IN,OUT,OPT)
 %
-% IN.ANAT            (string) the file name of an individual T1 volume (in stereotaxic space)
-% IN.TEMPLATE   (string) the file name of the template used for registration in stereotaxic space.
-% IN.FUNC            (string) the file name of an individual functional volume (in stereotaxic space)
+% IN.ANAT        (string) the file name of an individual T1 volume (in stereotaxic space)
+% IN.TEMPLATE    (string) the file name of the template used for registration in stereotaxic space.
+% IN.LAYOUT     (string) the file name of the template used for registration in stereotaxic space.
+% IN.FUNC        (string) the file name of an individual functional volume (in stereotaxic space)
 % OUT.STEREO     (string) the file name for the figure checking T1/template coregistration. 
-% OUT.ANAT          (string) the file name for the figure of the T1 scan.
-% OUT.TEMPLATE (string) the file name for the figure of the template.
-% OUT.FUNC         (string) the file name for the figure of the functional volume.
+% OUT.ANAT       (string) the file name for the figure of the T1 scan.
+% OUT.TEMPLATE   (string) the file name for the figure of the template.
+% OUT.FUNC       (string) the file name for the figure of the functional volume.
 % OUT.REPORT     (string) the file name of the html report. 
 % OPT.FOLDER_OUT (string) where to generate the outputs. 
-% OPT.ID                (string) the subject ID used to name the figures. 
-% OPT.COORD       (array N x 3) Coordinates for the figure. The default is:
+% OPT.ID         (string) the subject ID used to name the figures. 
+% OPT.COORD      (array N x 3) Coordinates for the figure. The default is:
 %                               [-30 , -65 , -15 ; 
 %                                  -8 , -25 ,  10 ;  
 %                                 30 ,  45 ,  60];
@@ -21,6 +22,7 @@ function [in,out,opt] = niak_brick_qc_fmri_preprocess(in,out,opt)
 %    with axis, title and colorbar. Otherwise just output the plain mosaic.    
 % OPT.TEMPLATE (string) if specified, this file name will be used in the report
 %   instead of OUT.TEMPLATE.
+% OPT.FLAG_LAYOUT (boolean, default false) if true, html coregistration report uses the layout images. 
 % OPT.FLAG_VERBOSE (boolean, default true) if true, verbose on progress. 
 % OPT.FLAG_TEST (boolean, default false) if the flag is true, the brick does nothing but 
 %    update IN, OUT and OPT.
@@ -56,17 +58,17 @@ function [in,out,opt] = niak_brick_qc_fmri_preprocess(in,out,opt)
 
 % Inputs
 in = psom_struct_defaults( in , ...
-    { 'anat' , 'template' , 'func' }, ...
-    { NaN   , NaN          , NaN   });
+    { 'anat' , 'template', 'layout' , 'func' }, ...
+    { NaN    , NaN       , NaN       , NaN   });
 
 % Outputs
 if (nargin < 2) || isempty(out)
     out = struct;
 end 
 out = psom_struct_defaults( out , ...
-    { 'anat' , 'template' , 'func' , 'report' }, ...
-    { ''        , ''               , ''        , ''           });
-
+    { 'anat' , 'template' ,  'layout_template' ,'layout_anat' , 'func' , 'report' }, ...
+    { ''     , ''         ,  ''               ,''            , ''     , ''       });
+ 
 % Options 
 if nargin < 3
     opt = struct;
@@ -75,8 +77,8 @@ coord_def =[-30 , -65 , -15 ;...
             -8 , -25 ,  10 ;... 
             30 ,  45 ,  60];
 opt = psom_struct_defaults ( opt , ...
-    { 'folder_out' , 'coord'   , 'flag_decoration' , 'flag_test' , 'id'          , 'template' , 'flag_verbose' }, ...
-    { pwd          , coord_def , true              , false       , 'anonymous'   , ''         , true           });
+    { 'folder_out' , 'coord'   , 'flag_decoration' , 'flag_test' , 'id'          , 'template',  'flag_layout' , 'flag_merge_layout_anat' , 'flag_verbose' }, ...
+    { pwd          , coord_def , true              , false       , 'anonymous'   , ''        ,  false                        , false                    , true           });
 
 opt.folder_out = niak_full_path(opt.folder_out);
 
@@ -87,6 +89,14 @@ end
 
 if isempty(out.template)
     out.template = [opt.folder_out 'template_slices.jpg'];
+end
+
+if isempty(out.layout_template)
+    out.layout_template = [opt.folder_out 'layout_template_slices.jpg'];
+end
+
+if isempty(out.layout_anat)
+    out.layout_anat = [opt.folder_out 'layout_t1_slices.jpg'];
 end
 
 if isempty(out.func)
@@ -136,6 +146,58 @@ if ~strcmp(out.template,'gb_niak_omitted')
     niak_brick_vol2img(in_v,out_v,opt_v);
 end
 
+%% Generate the image for the  template layout
+if ~strcmp(out.layout_template,'gb_niak_omitted')
+    if opt.flag_verbose
+        fprintf('Generating slices of the layout template...\n');
+    end
+    in_v.source = in.layout;
+    in_v.target = in.template;
+    out_v = out.layout_template;
+    opt_v.coord = opt.coord;
+    opt_v.colorbar = false;
+    opt_v.flag_decoration = opt.flag_decoration;
+    opt_v.colormap = 'gray';
+    opt_v.limits = 'adaptative';
+    opt_v.title = sprintf('       layout_template, %s',opt.id);
+    niak_brick_vol2img(in_v,out_v,opt_v);
+    % merge layout template
+    img1 = imread(out.template); 
+    img2 = imread(out.layout_template);
+    opt_o.thresh  = 0.2;
+    opt_o.alpha   = 0.25;
+    files_out = out.layout_template;
+    [img12,~] = niak_overlay_images(img1,img2,opt);
+    imwrite(img12,files_out);
+end
+
+%% Generate the image for the  anat layout
+if ~strcmp(out.layout_anat,'gb_niak_omitted')
+    if opt.flag_verbose
+        fprintf('Generating slices of the layout anat...\n');
+    end
+    in_v.source = in.layout;
+    in_v.target = in.template;
+    out_v = out.layout_anat;
+    opt_v.coord = opt.coord;
+    opt_v.colorbar = false;
+    opt_v.flag_decoration = opt.flag_decoration;
+    opt_v.colormap = 'gray';
+    opt_v.limits = 'adaptative';
+    opt_v.title = sprintf('       layout_anat, %s',opt.id);
+    niak_brick_vol2img(in_v,out_v,opt_v);
+    % merge layout anat
+    img1 = imread(out.anat); 
+    img2 = imread(out.layout_anat);
+    opt_o.thresh  = 0.2;
+    opt_o.alpha   = 0.25;
+    files_out = out.layout_anat;
+    [img12,~] = niak_overlay_images(img1,img2,opt);
+    imwrite(img12,files_out);
+    opt.flag_layout = true;
+    
+end
+
 %% Generate the image for the functional scan
 if ~strcmp(out.func,'gb_niak_omitted')
     if opt.flag_verbose
@@ -169,15 +231,25 @@ if ~strcmp(out.report,'gb_niak_omitted')
 
     %% Modify template and save output
     hf = fopen(out.report,'w+');
-    [path_a,name_a,ext_a] = fileparts(out.anat);
-    if ~isempty(opt.template)
-       [path_t,name_t,ext_t] = fileparts(opt.template);
+    if opt.flag_layout == true
+       [path_a,name_a,ext_a] = fileparts(out.anat);
+       [path_al,name_al,ext_al] = fileparts(out.layout_anat);
+       [path_t,name_t,ext_t] = fileparts([opt.folder_out 'summary_template_layout.jpg']);
     else
-       [path_t,name_t,ext_t] = fileparts(out.template);
+       [path_a,name_a,ext_a] = fileparts(out.anat);
+       path_al = path_a;
+       name_al = name_a;
+       ext_al = ext_a;
+       if ~isempty(opt.template)
+          [path_t,name_t,ext_t] = fileparts(opt.template);
+       else
+          [path_t,name_t,ext_t] = fileparts(out.template);
+       end
     end
     [path_f,name_f,ext_f] = fileparts(out.func);
     text_write = strrep(str_html,'$TEMPLATE',[name_t ext_t]);
     text_write = strrep(text_write,'$ANAT',[name_a ext_a]);
+    text_write = strrep(text_write,'$LAYOUTANAT',[name_al ext_al]);
     text_write = strrep(text_write,'$FUNC',[name_f ext_f]);
     fprintf(hf,'%s',text_write);
     fclose(hf);
