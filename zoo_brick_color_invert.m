@@ -48,10 +48,6 @@ if opt.flag_test
     return
 end
 
-%% Check the extension of the output
-
-[path_f,name_f,ext_f] = fileparts(out);
-
 %% Read the data
 [hdr,source] = niak_read_vol(in.source);
 [hdr,mask]   = niak_read_vol(in.mask);

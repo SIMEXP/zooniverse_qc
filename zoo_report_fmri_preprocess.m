@@ -176,7 +176,7 @@ else
   jin.source = in.group.avg_func;
   jin.mask = in.group.mask_func_group;
   jout = [opt.folder_out 'group' filesep 'func_template_stereotaxic_invert.nii.gz'];
-  jopt = struct;
+  jopt.perc_max = 0.99;
   pipeline = psom_add_job(pipeline,'template_func_inv','zoo_brick_color_invert',jin,jout,jopt);
 
   % Generate montage
@@ -184,6 +184,7 @@ else
   jin.target = in.template.anat;
   jin.source = pipeline.template_func_inv.files_out;
   jout = [opt.folder_out 'group' filesep 'func_template_stereotaxic_raw.png'];
+  jopt.padding =1;
   jopt.coord = opt.coord;
   jopt.colormap = 'gray';
   jopt.colorbar = false;
@@ -206,6 +207,7 @@ jout = [opt.folder_out 'group' filesep 'outline_anat.png'];
 pipeline = psom_add_job(pipeline,'montage_anat_outline','niak_brick_vol2img',jin,jout,jopt);
 % func
 jin.source = file_outline_func;
+jopt.padding =1;
 jout = [opt.folder_out 'group' filesep 'outline_func.png'];
 pipeline = psom_add_job(pipeline,'montage_func_outline','niak_brick_vol2img',jin,jout,jopt);
 
@@ -222,6 +224,7 @@ pipeline = psom_add_job(pipeline,'overlay_outlline_anat_template','niak_brick_ad
 jin.background = pipeline.montage_template_func.files_out;
 jin.overlay = pipeline.montage_func_outline.files_out;
 jout = [opt.folder_out 'group' filesep 'func_template_stereotaxic.png'];
+jopt.padding =1;
 jopt.transparency = 0.7;
 jopt.threshold = 0.9;
 pipeline = psom_add_job(pipeline,'overlay_outlline_func_template','niak_brick_add_overlay',jin,jout,jopt);
@@ -258,32 +261,33 @@ jopt.coord = opt.coord;
 jopt.colormap = 'gray';
 jopt.limits = 'adaptative';
 jopt.method = 'linear';
+jopt.padding =1;
+jopt.flag_decoration = false;
 for ss = 1:length(list_subject)
     jin.source = pipeline.(['bold_inv_' list_subject{ss}]).files_out;
     jout = [opt.folder_out 'registration' filesep list_subject{ss} '_func_raw.png'];
-    jopt.flag_decoration = false;
     pipeline = psom_add_job(pipeline,['bold_raw_montage_' list_subject{ss}],'niak_brick_vol2img',jin,jout,jopt);
 end
 
 % Merge individual montage T1 and outline
+clear jin jout jopt
+jin.overlay = pipeline.montage_anat_outline.files_out;
+jopt.transparency = 0.7;
+jopt.threshold = 0.9;
 for ss = 1:length(list_subject)
-    clear jin jout jopt
     jin.background = pipeline.(['t1_raw_montage_' list_subject{ss}]).files_out;
-    jin.overlay = pipeline.montage_anat_outline.files_out;
     jout = [opt.folder_out 'registration' filesep list_subject{ss} '_anat.png'];
-    jopt.transparency = 0.7;
-    jopt.threshold = 0.9;
     pipeline = psom_add_job(pipeline,['t1_' list_subject{ss} '_overlay'],'niak_brick_add_overlay',jin,jout,jopt);
 end
 
 % Merge individual montage func and outline
+clear jin jout jopt
+jin.overlay = pipeline.montage_func_outline.files_out;
+jopt.transparency = 0.7;
+jopt.threshold = 0.9;
 for ss = 1:length(list_subject)
-    clear jin jout jopt
     jin.background = pipeline.(['bold_raw_montage_' list_subject{ss}]).files_out;
-    jin.overlay = pipeline.montage_func_outline.files_out;
     jout = [opt.folder_out 'registration' filesep list_subject{ss} '_func.png'];
-    jopt.transparency = 0.7;
-    jopt.threshold = 0.9;
     pipeline = psom_add_job(pipeline,['bold_' list_subject{ss} '_overlay'],'niak_brick_add_overlay',jin,jout,jopt);
 end
 
