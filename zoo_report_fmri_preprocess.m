@@ -175,8 +175,8 @@ else
   clear jin jout jopt
   jin.source = in.group.avg_func;
   jin.mask = in.group.mask_func_group;
+  jopt = struct;
   jout = [opt.folder_out 'group' filesep 'func_template_stereotaxic_invert.nii.gz'];
-  jopt.perc_max = 0.99;
   pipeline = psom_add_job(pipeline,'template_func_inv','zoo_brick_color_invert',jin,jout,jopt);
 
   % Generate montage
@@ -207,7 +207,6 @@ jout = [opt.folder_out 'group' filesep 'outline_anat.png'];
 pipeline = psom_add_job(pipeline,'montage_anat_outline','niak_brick_vol2img',jin,jout,jopt);
 % func
 jin.source = file_outline_func;
-jopt.padding =1;
 jout = [opt.folder_out 'group' filesep 'outline_func.png'];
 pipeline = psom_add_job(pipeline,'montage_func_outline','niak_brick_vol2img',jin,jout,jopt);
 
@@ -224,7 +223,6 @@ pipeline = psom_add_job(pipeline,'overlay_outlline_anat_template','niak_brick_ad
 jin.background = pipeline.montage_template_func.files_out;
 jin.overlay = pipeline.montage_func_outline.files_out;
 jout = [opt.folder_out 'group' filesep 'func_template_stereotaxic.png'];
-jopt.padding =1;
 jopt.transparency = 0.7;
 jopt.threshold = 0.9;
 pipeline = psom_add_job(pipeline,'overlay_outlline_func_template','niak_brick_add_overlay',jin,jout,jopt);

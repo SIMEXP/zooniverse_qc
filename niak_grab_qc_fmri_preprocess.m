@@ -121,9 +121,9 @@ files.template = [path_anat 'template_anat_stereo' ext];
 if ~exist(files.template);
     switch opt.template
         case 'mni_icbm152_nlin_sym_09a'
-            files.template =  [gb_niak_path_niak 'template' filesep 'mni-models_icbm152-nl-2009-1.0' filesep 'mni_icbm152_t1_tal_nlin_sym_09a.mnc.gz'];    
+            files.template =  [GB_NIAK.path_niak 'template' filesep 'mni-models_icbm152-nl-2009-1.0' filesep 'mni_icbm152_t1_tal_nlin_sym_09a.mnc.gz'];    
         case 'mni_icbm152_nlin_asym_09a'
-            files.template =  [gb_niak_path_niak 'template' filesep 'mni-models_icbm152-nl-2009-1.0' filesep 'mni_icbm152_t1_tal_nlin_asym_09a.mnc.gz'];
+            files.template =  [GB_NIAK.path_niak 'template' filesep 'mni-models_icbm152-nl-2009-1.0' filesep 'mni_icbm152_t1_tal_nlin_asym_09a.mnc.gz'];
         otherwise
             error('%s is an unkown template space',opt.template)
     end
