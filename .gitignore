@@ -1,2 +1,3 @@
 *.m~
 octave-workspace
+.ipynb_checkpoints/

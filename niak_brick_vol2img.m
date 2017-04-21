@@ -1,26 +1,36 @@
 function [in,out,opt] = niak_brick_vol2img(in,out,opt)
-% Generate a figure with a montage of different slices of a volume 
+% Generate a figure with a montage of different slices of a volume
 %
 % SYNTAX: [IN,OUT,OPT] = NIAK_BRICK_VOL2IMG(IN,OUT,OPT)
 %
 % IN.SOURCE (string) the file name of a 3D volume
-% IN.TARGET (string, default '') the file name of a 3D volume defining the target space. 
-%   If left empty, or unspecified, OUT is the world space associated with IN.SOURCE 
-%   i.e. the volume is resamples to have no direction cosines. 
-% OUT (string) the file name for the figure. The extension will determine the type. 
-% OPT.COORD (array N x 3) coordinates to generate the slices.
+% IN.TARGET (string, default '') the file name of a 3D volume defining the target space.
+%   If left empty, or unspecified, OUT is the world space associated with IN.SOURCE
+%   i.e. the volume is resamples to have no direction cosines.
+% OUT (string) the file name for the figure. The extension will determine the type.
+% OPT.COORD (array N x 3) coordinates to generate the slices. If a fourth element
+%   is specified, it will be used as the number of time frame (1-index) for the
+%   montage, if the dataset is 3D+t
 % OPT.COLORBAR (boolean, default true)
-% OPT.COLORMAP (string, default 'gray') The type of colormap. Anything supported by 
-%   the instruction `colormap` will work. 
-% OPT.TITLE (string, default '') a title for the figure. 
-% OPT.SIZE_IMG (vector 1x2) the size of each image in the mosaic (before concatenation in time).
-%   This is purely an output parameter.
+% OPT.COLORMAP (string, default 'gray') The type of colormap. Anything supported by
+%   the instruction `colormap` will work.
+% OPT.TITLE (string, default '') a title for the figure.
+% OPT.PADDING (scalar, default 0) the value used to padd slices together
 % OPT.LIMITS (vector 1x2) the limits for the colormap. By defaut it is using [min,max].
-%    If a string is specified, the function will implement an adaptative strategy. 
+%    If a string is specified, the function will implement an adaptative strategy.
+% OPT.FLAG_VERTICAL (boolean, default true) if the flag is true multiple coordinates / time frames
+%    are stacked vertically, otherwise the stack is build horizontally.
 % OPT.FLAG_DECORATION (boolean, default true) if the flag is true, produce a regular figure
 %    with axis, title and colorbar. Otherwise just output the plain mosaic.
-% OPT.FLAG_TEST (boolean, default false) if the flag is true, the brick does nothing but 
+% OPT.FLAG_MEDIAN (boolean, default false) if the flag is on and the input volume is 4D
+%    the median volume is extracted.
+% OPT.FLAG_TEST (boolean, default false) if the flag is true, the brick does nothing but
 %    update IN, OUT and OPT.
+%
+% The montage is generated in voxel space associated with the target. If no target is specified,
+% the source space is resampled with direction cosines, and the field of view is adjusted
+% such that it includes all of the voxels. Only nearest neighbour interpolation is
+% available.
 %
 % Copyright (c) Pierre Bellec
 % Centre de recherche de l'Institut universitaire de griatrie de Montral, 2016.
@@ -50,46 +60,59 @@ function [in,out,opt] = niak_brick_vol2img(in,out,opt)
 in = psom_struct_defaults( in , ...
     { 'source' , 'target' }, ...
     { NaN       , ''          });
-    
-opt = psom_struct_defaults ( opt , ...
-    { 'colorbar' , 'coord' , 'limits' , 'colormap' , 'size_slices' , 'title' , 'flag_decoration' , 'flag_test' }, ...
-    { true       , NaN     , []       , 'gray'     , []            , ''      , true              , false         });
 
-if opt.flag_test 
+opt = psom_struct_defaults ( opt , ...
+    { 'padding' , 'flag_median' , 'method' , 'flag_vertical' , 'colorbar' , 'coord' , 'limits' , 'colormap' , 'size_slices' , 'title' , 'flag_decoration' , 'flag_test' }, ...
+    { 0         , false         , 'linear' , true            , true       , NaN     , []       , 'gray'     , []            , ''      , true              , false         });
+
+if opt.flag_test
     return
 end
 
-%% Check the extension of the output 
-[path_f,name_f,ext_f] = fileparts(out);
-ext_f = ext_f(2:end);
-    
-%% Read the data 
-[hdr.source,vol] = niak_read_vol(in.source);
-if isempty(in.target)
-    N = [diag(hdr.source.info.voxel_size) zeros(3,1) ; 0 0 0 1];
-    W = N\([hdr.source.info.mat(1:3,1:3) zeros(3,1) ; 0 0 0 1]);
-    hdr.target.info.mat = W*hdr.source.info.mat;
-    hdr.target.info.dimensions = hdr.source.info.dimensions;
-else
-    hdr.target = niak_read_vol(in.target);    
+if ~opt.flag_vertical && opt.flag_decoration
+    error('Horizontal stacks are not supported with decorations. Change either OPT.FLAG_VERTICAL or OPT.FLAG_DECORATION');
 end
 
+%% Check the extension of the output
+[path_f,name_f,ext_f] = fileparts(out);
+ext_f = ext_f(2:end);
+
+%% Read the data
+[hdr.source,vol] = niak_read_vol(in.source);
+if opt.flag_median
+    vol = median(vol,4);
+end
+
+if isempty(in.target)
+    hdr.target = [];
+else
+    hdr.target = niak_read_vol(in.target);
+end
 
 %% Build image
-for tt = 1:size(vol,4)
+if (length(opt.coord)==4)&&(ndims(vol)==4)
+    list_vol = opt.coord(4);
+else
+    list_vol = 1:size(vol,4);
+end
+opt_vol2image.padding = opt.padding;
+for tt = list_vol
     for cc = 1:size(opt.coord,1)
-        [img_tmp,slices] = niak_vol2img(hdr,vol(:,:,:,tt),opt.coord(cc,:));
+        [img_tmp,slices] = niak_vol2img(hdr,vol(:,:,:,tt),opt.coord(cc,1:3),opt_vol2image);
         if (cc == 1)&&(tt==1)
             img = img_tmp;
             size_slices = size(slices{1});
             size_slices = [size_slices ; size(slices{2})];
             size_slices = [size_slices ; size(slices{3})];
         else
-            img = [img ; img_tmp];
+            if opt.flag_vertical
+                img = [img ; img_tmp];
+            else
+                img = [img img_tmp];
+            end
         end
     end
 end
-opt.size_img = size(img_tmp);
 
 %% image limits
 if ischar(opt.limits)
@@ -101,10 +124,9 @@ if ischar(opt.limits)
 end
 
 if isempty(opt.limits)
-    climits = [min(img(:)) max(img(:))];
-else
-    climits = opt.limits;
+    opt.limits = [min(img(:)) max(img(:))];
 end
+climits = opt.limits;
 
 %% No decoration: generate a bare mosaic
 if ~opt.flag_decoration
@@ -138,7 +160,7 @@ if ~isempty(opt.title)
     title(strrep(opt.title,'_','\_'));
 end
 
-%% Set X axis 
+%% Set X axis
 ha = gca;
 valx = zeros(3,1);
 valx(1) = size_slices(1,2)/2;
@@ -159,8 +181,6 @@ set(ha,'yticklabelmode','manual')
 set(ha,'yticklabel',label_view);
 
 %% Deal with font type and size
-%FN = findall(ha,'-property','FontName');
-%set(FN,'FontName','/usr/share/fonts/truetype/dejavu/DejaVuSerifCondensed.ttf');
 FS = findall(ha,'-property','FontSize');
 set(FS,'FontSize',8);
 
