@@ -10,7 +10,8 @@ function [img,slices] = niak_vol2img(hdr,vol,coord,opt)
 % OPT.TYPE_FLIP (string, default 'rot90') how to flip slices to represent them.
 % OPT.TYPE_VIEW (string, default 'all') the  type of views to include:
 %   'axial', 'sagital', 'coronal', 'all'
-% OPT.PADDING (scalar, default 0) the value used to padd slices together
+% OPT.PADDING (scalar, default 0) the value used to padd slices together. If Inf, 
+%    maximum volume value is used as padding.
 % IMG (array) all three slices assembled into a single image, in target space.
 % SLICES (cell of array) each entry is one slice (x, y, then z).
 %
@@ -60,6 +61,10 @@ end
 opt = psom_struct_defaults(opt, ...
     { 'padding' , 'type_view' , 'method' , 'type_flip' }, ...
     { 0         , 'all'              , 'linear'     , 'rot90'      });
+
+if isinf(opt.padding)
+  opt.padding = max(vol(:));
+end
 
 %% stack slices, if multiple sets of coordinates are specified
 nb_slices = size(coord,1);

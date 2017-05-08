@@ -15,7 +15,8 @@ function [in,out,opt] = niak_brick_vol2img(in,out,opt)
 % OPT.COLORMAP (string, default 'gray') The type of colormap. Anything supported by
 %   the instruction `colormap` will work.
 % OPT.TITLE (string, default '') a title for the figure.
-% OPT.PADDING (scalar, default 0) the value used to padd slices together
+% OPT.PADDING (scalar, default 0) the value used to padd slices together. If Inf, 
+%    maximum volume value is used as padding.
 % OPT.LIMITS (vector 1x2) the limits for the colormap. By defaut it is using [min,max].
 %    If a string is specified, the function will implement an adaptative strategy.
 % OPT.FLAG_VERTICAL (boolean, default true) if the flag is true multiple coordinates / time frames
