@@ -1,19 +1,20 @@
-function [in,out,opt] = niak_brick_invert_contrast(in,out,opt)
+function [in,out,opt] = zoo_brick_invert_contrast(in,out,opt)
 % Invert a volume color contrast
 %
-% SYNTAX: [IN,OUT,OPT] = NIAK_BRICK_INVERT_CONTRAST(IN,OUT,OPT)
+% SYNTAX: [IN,OUT,OPT] = ZOO_BRICK_INVERT_CONTRAST(IN,OUT,OPT)
 %
-% IN.SOURCE (string) the file name of a 3D volume to invert.
-% IN.MASK (string) the file name of a 3D mask.
-% OUT (string) the file name of the inverted volume.
+% IN.SOURCE (string) the file name of a 3D volume to be iverted
+% IN.MASK (string, default '') the file name of a 3D volume defining the Mask space.
+% OUT (string) the file name for the inverted volume.
 % OPT.ONLY_MASK (boolean, default false) if true the brick only mask volume background.
 % OPT.FLAG_TEST (boolean, default false) if the flag is true, the brick does nothing but
 %    update IN, OUT and OPT.
-% Copyright (c) Yassine Benhajali,Pierre Bellec
-% Centre de recherche de l'Institut universitaire de griatrie de Montral, 2017.
-% Maintainer : pierre.bellec@criugm.qc.ca
+%
+% Copyright (c) Pierre Bellec , Yassine Benhajali
+% Centre de recherche de l'Institut universitaire de griatrie de Montral, 2016.
+% Maintainer : pierre.bellec@criugm.qc.ca; yassine.benhajali@gmail.com
 % See licensing information in the code.
-% Keywords : visualization, montage, 3D brain volumes
+% Keywords : visualization, contrast, 3D brain volumes
 
 % Permission is hereby granted, free of charge, to any person obtaining a copy
 % of this software and associated documentation files (the "Software"), to deal
@@ -36,8 +37,8 @@ function [in,out,opt] = niak_brick_invert_contrast(in,out,opt)
 %% Defaults
 niak_gb_vars
 in = psom_struct_defaults( in , ...
-    { 'source','mask' }, ...
-    { NaN  , ''    });
+    { 'source' , 'mask' }, ...
+    { NaN      , ''     });
 
 if isempty(in.mask)
   in.mask = [ GB_NIAK.path_template ...
@@ -52,49 +53,37 @@ if nargin < 3
     opt = struct;
 end
 
+% Options
 opt = psom_struct_defaults ( opt , ...
-    { 'only_mask' , 'flag_test' }, ...
-    { false       ,  false      });
+    { 'perc_max' , 'perc_min' , 'only_mask' , 'flag_test' }, ...
+    { 0.99       , 0.01       , false       , false       });
 
 if opt.flag_test
     return
 end
 
-%% Read volumes
-[hdr,vol] = niak_read_vol(in.source);
-[hdr,mask] = niak_read_vol(in.mask);
+%% Read the data
+[hdr,source] = niak_read_vol(in.source);
+[hdr,mask]   = niak_read_vol(in.mask);
 
 %% if only mask background
 if opt.only_mask
-  vol(~mask) = max(vol(:));
+  source(~mask) = max(source(:));
   hdr.file_name = out;
-  niak_write_vol(hdr,vol);
+  niak_write_vol(hdr,source);
   return
 end
 
-%% Reshape
-% set tmp file
-[path_f,name_f,ext_f,flag_zip,ext_short] = niak_fileparts(in.mask_func);
-tmp_file_reshape = psom_file_tmp(ext_short);
-% run reshape
-command_reshape = ['mincresample -clobber ' in.mask_func ' ' tmp_file_reshape ' -like ' in.target];
-[status,msg] = system(command_reshape);
-if status ~=0
-  error('There was an error calling mincresample. The call was: %s ; The error message was: %s',command_reshape,msg)
-end
-[hdr,avg_mask_bold] = niak_read_vol(tmp_file_reshape);
-[hdr,mask_t1] = niak_read_vol(in.mask_anat);
-
-%% Create brain borders
-mask_t1_d = niak_morph(mask_t1,'-successive DDD');
-bold_in = avg_mask_bold > opt.thick_border;
-bold_outline = ~bold_in&mask_t1_d;
-
-%% Merge brain border with layout
-[hdr_layout,vol_layout] = niak_read_vol(in.layout);
-vol_final = vol_layout | bold_outline;
-% smooth final volume layout
-vol_final_s = niak_morph (vol_final,'-successive DDEE');
-% write final volumes
-hdr.file_name =  out.outline;
-niak_write_vol (hdr,vol_final_s);
+% Invert image
+mask = mask>0;
+val = sort(source(mask),'ascend');
+vmin = val(round(opt.perc_min*length(val)));
+vmax = val(round(opt.perc_max*length(val)));
+source(source<vmin) = vmin;
+source(source>vmax) = vmax;
+source(mask) = (source(mask) - vmin)/(vmax-vmin);
+source(~mask) = 0;
+source = 1 - source;
+source = abs(source);
+hdr.file_name = out;
+niak_write_vol(hdr,source);
