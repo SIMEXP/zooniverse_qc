@@ -1,7 +1,7 @@
 addpath (genpath('~/git/projects'))
 build_path zooniverse_qc
 build_path niak
-path_fmri_preproc = '/home/yassinebha/database/adhd200_preproc/niak/fmri_preprocess_old/'; 
+path_fmri_preproc = '/home/yassinebha/database/adhd200_preproc/niak/fmri_preprocess_old/';
 files_in  = niak_grab_qc_fmri_preprocess(path_fmri_preproc);
 in.ind.anat = files_in.anat;
 in.ind.func = files_in.func;

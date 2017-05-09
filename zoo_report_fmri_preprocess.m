@@ -20,8 +20,8 @@ function pipeline = zoo_report_fmri_preprocess(in,opt)
 %   ANAT (string) the file name of the template used for registration in stereotaxic space.
 %   FMRI (string)the file name of the template used to resample fMRI data.
 %   ANAT_OUTLINE (string, default anatomical symmetric outline)
-%     the f'' name of a b in'' masks, highlighting regions for coregistration.
-%   FUNC_OU''NE (string,  de''lt functional symmetric outline)
+%     the file name of a binary masks, highlighting regions for coregistration.
+%   FUNC_OUTLINE (string,  default functional symmetric outline)
 %     the file name of a binary masks, highlighting regions for coregistration.
 %
 % OPT (structure)
@@ -29,7 +29,7 @@ function pipeline = zoo_report_fmri_preprocess(in,opt)
 %   FOLDER_OUT (string) where to generate the outputs.
 %   COORD (array N x 3) Coordinates for the registration figures.
 %     The default is:
-%     [-30 , -65 , -15 ;
+%     [-30 , -65 , -6 ;
 %       -8 , -25 ,  10 ;
 %       30 ,  45 ,  60];
 %   TYPE_OUTLINE (string, default 'sym') what type of registration landmarks to use (either
@@ -39,14 +39,11 @@ function pipeline = zoo_report_fmri_preprocess(in,opt)
 %   FLAG_TEST (boolean, default false) if the flag is true, the pipeline will
 %     be generated but no processing will occur.
 %
-% Note:
-%   Labels SUBJECT, SESSION and RUN are arbitrary but need to conform to matlab's
-%   specifications for field names.
 %
 %   This pipeline needs the PSOM library to run.
 %   http://psom.simexp-lab.org/
 %
-% Copyright (c) Pierre Bellec
+% Copyright (c) Pierre Bellec , Yassine Benhajali
 % Centre de recherche de l'Institut universitaire de griatrie de Montral, 2016.
 % Maintainer : pierre.bellec@criugm.qc.ca
 % See licensing information in the code.
@@ -112,7 +109,7 @@ end
 if nargin < 2
     opt = struct;
 end
-coord_def =[-30 , -65 , -15 ;
+coord_def =[-30 , -65 , -6 ;
              -8 , -25 ,  10 ;
              30 ,  45 ,  60];
 opt = psom_struct_defaults ( opt , ...
@@ -128,13 +125,14 @@ if ~ismember(opt.type_outline,{'sym','asym'})
 end
 
 if isempty(in.template.anat_outline)
-  file_outline_anat = [GB_NIAK.path_niak filesep 'template' filesep 'mni-models_icbm152-nl-2009-1.0' filesep 'mni_icbm152_t1_tal_nlin_' opt.type_outline '_09a_anat_outline_registration.mnc.gz'];
+  file_outline_anat = [GB_NIAK.path_niak filesep 'template' filesep 'mni-models_icbm152-nl-2009-1.0' ...
+  filesep 'mni_icbm152_t1_tal_nlin_' opt.type_outline '_09a_anat_outline_registration.mnc.gz'];
 else
   file_outline_anat = in.template.anat_outline;
 end
 
 if isempty(in.template.func_outline)
-  file_outline_func = [GB_NIAK.path_niak filesep 'template' filesep 'mni-models_icbm152-nl-2009-1.0' filesep 'mni_icbm152_t1_tal_nlin_' opt.type_outline '_09a_func_outline_registration.mnc.gz'];
+  file_outline_func = file_outline_anat;
 else
   file_outline_func = in.template.func_outline;
 end
@@ -144,12 +142,18 @@ pipeline = struct;
 clear jin jout jopt
 niak_gb_vars
 path_template = [GB_NIAK.path_niak 'reports' filesep 'fmri_preprocess' filesep 'templates' filesep ];
-jin = niak_grab_folder( path_template , {'.git',[path_template 'motion'],[path_template 'registration'],[path_template 'summary'],[path_template 'group']});
+jin = niak_grab_folder( path_template , {'.git',[path_template 'motion'],[path_template 'registration'],...
+[path_template 'summary'],[path_template 'group']});
 jout = strrep(jin,path_template,opt.folder_out);
 jopt.folder_out = opt.folder_out;
 pipeline = psom_add_job(pipeline,'cp_report_templates','niak_brick_copy',jin,jout,jopt);
 
 %% Generate template montage images
+% Build anat outline
+clear jin jout jopt
+jin.layout = file_outline_anat;
+jout = 
+
 clear jin jout jopt
 jin.target = in.template.anat;
 jopt.coord = opt.coord;
