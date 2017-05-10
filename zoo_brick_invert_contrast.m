@@ -4,7 +4,8 @@ function [in,out,opt] = zoo_brick_invert_contrast(in,out,opt)
 % SYNTAX: [IN,OUT,OPT] = ZOO_BRICK_INVERT_CONTRAST(IN,OUT,OPT)
 %
 % IN.SOURCE (string) the file name of a 3D volume to be iverted
-% IN.MASK (string, default '') the file name of a 3D volume defining the Mask space.
+% IN.MASK (string, default '') the file name of a 3D volume defining the mask.
+%    notice: this mask is used only if OPT.ONLY_MASK set to true.
 % OUT (string) the file name for the inverted volume.
 % OPT.ONLY_MASK (boolean, default false) if true the brick only mask volume background.
 % OPT.FLAG_TEST (boolean, default false) if the flag is true, the brick does nothing but
@@ -62,19 +63,20 @@ if opt.flag_test
     return
 end
 
-%% Read the data
+%% Read the source
 [hdr,source] = niak_read_vol(in.source);
-[hdr,mask]   = niak_read_vol(in.mask);
 
 %% if only mask background
 if opt.only_mask
+  [hdr,mask]   = niak_read_vol(in.mask);
   source(~mask) = max(source(:));
   hdr.file_name = out;
   niak_write_vol(hdr,source);
   return
 end
 
-% Invert image
+% Invert image contrast
+mask = niak_mask_brain(source);
 mask = mask>0;
 val = sort(source(mask),'ascend');
 vmin = val(round(opt.perc_min*length(val)));

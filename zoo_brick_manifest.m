@@ -51,9 +51,9 @@ if opt.flag_test
 end
 
 switch opt.modality
- case 't1'
+case 'anat'
   template = 'anat_template_stereotaxic.png';
- case 'bold'
+case 'func'
   template = 'func_template_stereotaxic.png';
 end
 
