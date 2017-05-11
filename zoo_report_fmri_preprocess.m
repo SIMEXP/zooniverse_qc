@@ -164,7 +164,7 @@ pipeline = psom_add_job(pipeline,'outline_anat_template','zoo_brick_outline',jin
 clear jin jout jopt
 jin.layout = file_outline_func;
 [~,~,ext_f,~,~] = niak_fileparts(in.group.avg_mask_func);
-if any(strcmp(ext_f,{'nii.gz','nii'}))
+if any(strcmp(ext_f,{'.nii.gz','.nii'}))
   warning('the average BOLD mask %s sould be in minc format, it will be converted to minc', in.group.avg_mask_func);
   command = 'system([''nii2mnc '' files_in '' '' files_out])';
   pipeline.convert2minc.command      = command;
@@ -173,11 +173,11 @@ if any(strcmp(ext_f,{'nii.gz','nii'}))
   jin.mask_func = pipeline.convert2minc.files_out;
 else
   jin.mask_func = in.group.avg_mask_func;
-  jout = [opt.folder_out 'group' filesep 'func_outline_' opt.type_outline '.nii.gz'];
-  jopt.modality = 'func';
-  jopt.type_sym = opt.type_outline;
-  pipeline = psom_add_job(pipeline,'outline_func_template','zoo_brick_outline',jin,jout,jopt);
 end
+jout = [opt.folder_out 'group' filesep 'func_outline_' opt.type_outline '.nii.gz'];
+jopt.modality = 'func';
+jopt.type_sym = opt.type_outline;
+pipeline = psom_add_job(pipeline,'outline_func_template','zoo_brick_outline',jin,jout,jopt);
 
 %% BOLD outline montage
 clear jin jout jopt
