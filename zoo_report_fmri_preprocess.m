@@ -169,7 +169,7 @@ if any(strcmp(ext_f,{'.nii.gz','.nii'}))
   command = 'system([''nii2mnc '' files_in '' '' files_out])';
   pipeline.convert2minc.command      = command;
   pipeline.convert2minc.files_in     = in.group.avg_mask_func;
-  pipeline.convert2minc.files_out    = psom_file_tmp('.mnc');
+  pipeline.convert2minc.files_out    = [opt.folder_out 'group' filesep 'func_avg_mask_tmp.mnc'];
   jin.mask_func = pipeline.convert2minc.files_out;
 else
   jin.mask_func = in.group.avg_mask_func;
@@ -258,7 +258,7 @@ for ss = 1:length(list_subject)
     jin.mask = in.group.mask_func_group;
     jout.vol_nu = '';
     jout.vol_imp = '';
-    jopt.folder_out = GB_NIAK.tmp;
+    jopt.folder_out = [opt.folder_out 'registration' filesep];
     pipeline = psom_add_job(pipeline,['bold_nuc_' list_subject{ss}],'niak_brick_nu_correct',jin,jout,jopt);
     pipeline = psom_add_clean(pipeline,['clean_bold_nuc_' list_subject{ss}],jout);
 end
