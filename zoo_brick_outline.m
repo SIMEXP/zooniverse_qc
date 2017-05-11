@@ -68,16 +68,6 @@ if isempty(in.target) && strcmp(opt.modality,'func')
   'mni-models_icbm152-nl-2009-1.0/mni_icbm152_t1_tal_nlin_' opt.type_sym '_09a_mask_dilated5mm.mnc.gz'];
 end
 
-if ischar(out)
-  out = struct('outline',out);
-else
-  error('OUT should be a string');
-end
-
-out = psom_struct_defaults( out , ...
-    { 'outline' }, ...
-    { NaN       });
-
 if opt.flag_test
     return
 end
@@ -117,5 +107,5 @@ vol_final = vol_layout | outline;
 % smooth final volume layout
 vol_final_s = niak_morph (vol_final,'-successive DDEE');
 % write final volumes
-hdr.file_name =  out.outline;
+hdr.file_name =  out;
 niak_write_vol (hdr,vol_final_s);

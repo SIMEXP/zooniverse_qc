@@ -53,18 +53,25 @@ end
 switch opt.modality
 case 'anat'
   template = 'anat_template_stereotaxic.png';
+  manifest_report = cell(length(opt.list_subject)+1,3);
+  manifest_report(2:end,1) = opt.list_subject;
+  manifest_report(2:end,2) = strcat(opt.list_subject,'_',opt.modality,'.png');
+  manifest_report(2:end,3) = repmat({[opt.modality '_template_stereotaxic.png']},[length(opt.list_subject),1]);
+  manifest_report(1,1) = 'subject_ID';
+  manifest_report(1,2) = 'image1';
+  manifest_report(1,3) = 'image2';
+
 case 'func'
   template = 'func_template_stereotaxic.png';
-end
+  manifest_report = cell(length(opt.list_subject)+1,3);
+  manifest_report(2:end,1) = opt.list_subject;
+  manifest_report(2:end,2) = strcat(opt.list_subject,'_',opt.modality,'.png');
+  manifest_report(2:end,3) = strcat(opt.list_subject,'_anat_back.png');
+  manifest_report(1,1) = 'subject_ID';
+  manifest_report(1,2) = 'image1';
+  manifest_report(1,3) = 'image2';
 
-%% Initialize the manifest file
-manifest_report = cell(length(opt.list_subject)+1,3);
-manifest_report(2:end,1) = opt.list_subject;
-manifest_report(2:end,2) = strcat(opt.list_subject,'_',opt.modality,'.png');
-manifest_report(2:end,3) = repmat({[opt.modality '_template_stereotaxic.png']},[length(opt.list_subject),1]);
-manifest_report(1,1) = 'subject_ID';
-manifest_report(1,2) = 'image1';
-manifest_report(1,3) = 'image2';
+end
 
 %% Save the report
 niak_write_csv_cell(out,manifest_report);
