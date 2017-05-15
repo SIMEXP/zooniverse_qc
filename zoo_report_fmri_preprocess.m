@@ -27,11 +27,16 @@ function pipeline = zoo_report_fmri_preprocess(in,opt)
 % OPT (structure)
 %   with the following fields:
 %   FOLDER_OUT (string) where to generate the outputs.
-%   COORD (array N x 3) Coordinates for the registration figures.
+%   COORD_ANAT (array N x 3) Coordinates for the  anatomical registration figures.
 %     The default is:
 %     [-30 , -65 , -6 ;
-%       -8 , -25 ,  10 ;
-%       30 ,  45 ,  60];
+%      -8 , -20 ,  13 ;
+%      30 ,  54 ,  58];
+%   COORD_FUNC (array N x 3) Coordinates for the  functional registration figures.
+%     The default is:
+%     [-50 , -57 , 5 ;
+%      -8 , -20 ,  19 ;
+%      30 ,  45 ,  58];
 %   TYPE_OUTLINE (string, default 'sym') what type of registration landmarks to use (either
 %     'sym' for symmetrical templates or 'asym' for asymmetrical templates).
 %   PSOM (structure) options for PSOM. See PSOM_RUN_PIPELINE.
@@ -108,12 +113,17 @@ end
 if nargin < 2
     opt = struct;
 end
-coord_def =[-30 , -65 , -6 ;
-             -8 , -25 ,  10 ;
-             30 ,  45 ,  60];
+coord_def_anat =[-50 , -65 , -6 ;
+                -8 , -20 ,  13 ;
+                30 ,  54 ,  58];
+
+coord_def_func =[-50 , -57 , 5 ;
+                -8 , -20 ,  19 ;
+                30 ,  45 ,  58];
+
 opt = psom_struct_defaults ( opt , ...
-    { 'type_outline' , 'folder_out' , 'coord'   , 'flag_test' , 'psom'   , 'flag_verbose' }, ...
-    { 'sym'          , pwd          , coord_def , false       , struct() , true           });
+    { 'type_outline' , 'folder_out' , 'coord_anat'   , 'coord_func'   , 'flag_test' , 'psom'   , 'flag_verbose' }, ...
+    { 'sym'          , pwd          , coord_def_anat , coord_def_func , false       , struct() , true           });
 
 if isempty(in.template.anat)
   in.template.anat = [ GB_NIAK.path_template ...
@@ -165,11 +175,11 @@ clear jin jout jopt
 jin.layout = file_outline_func;
 [~,~,ext_f,~,~] = niak_fileparts(in.group.avg_mask_func);
 if any(strcmp(ext_f,{'.nii.gz','.nii'}))
-  warning('the average BOLD mask %s sould be in minc format, it will be converted to minc', in.group.avg_mask_func);
-  command = 'system([''nii2mnc '' files_in '' '' files_out])';
+  command = '[hdr,vol] = niak_read_vol(files_in);hdr.file_name = files_out;niak_write_vol(hdr,vol);';
   pipeline.convert2minc.command      = command;
   pipeline.convert2minc.files_in     = in.group.avg_mask_func;
   pipeline.convert2minc.files_out    = [opt.folder_out 'group' filesep 'func_avg_mask_tmp.mnc'];
+  pipeline = psom_add_clean(pipeline,'clean_convert2minc',pipeline.convert2minc.files_out);
   jin.mask_func = pipeline.convert2minc.files_out;
 else
   jin.mask_func = in.group.avg_mask_func;
@@ -179,12 +189,13 @@ jopt.modality = 'func';
 jopt.type_sym = opt.type_outline;
 pipeline = psom_add_job(pipeline,'outline_func_template','zoo_brick_outline',jin,jout,jopt);
 
+
 %% BOLD outline montage
 clear jin jout jopt
 jin.target = in.template.anat;
 jin.source = pipeline.outline_func_template.files_out;
 jout = [opt.folder_out 'group' filesep 'func_template_outline_montage.png'];
-jopt.coord = opt.coord;
+jopt.coord = opt.coord_func;
 jopt.colormap = 'jet';
 jopt.colorbar = false;
 jopt.limits = [0 1.1];
@@ -196,7 +207,7 @@ clear jin jout jopt
 jin.target = in.template.anat;
 jin.source = pipeline.outline_anat_template.files_out;
 jout = [opt.folder_out 'group' filesep 'anat_template_outline_montage.png'];
-jopt.coord = opt.coord;
+jopt.coord = opt.coord_anat;
 jopt.colormap = 'jet';
 jopt.colorbar = false;
 jopt.limits = [0 1.1];
@@ -208,7 +219,7 @@ clear jin jout jopt
 jin.source = in.template.anat;
 jin.target = in.template.anat;
 jout = [opt.folder_out 'group' filesep 'anat_template_stereotaxic_raw.png'];
-jopt.coord = opt.coord;
+jopt.coord = opt.coord_anat;
 jopt.colormap = 'gray';
 jopt.colorbar = false;
 jopt.limits = 'adaptative';
@@ -228,7 +239,7 @@ pipeline = psom_add_job(pipeline,'overlay_outlline_anat_template','niak_brick_ad
 % Individual T1 montage images
 clear jin jout jopt
 jin.target = in.template.anat;
-jopt.coord = opt.coord;
+jopt.coord = opt.coord_anat;
 jopt.colormap = 'gray';
 jopt.limits = 'adaptative';
 jopt.method = 'linear';
@@ -260,7 +271,8 @@ for ss = 1:length(list_subject)
     jout.vol_imp = '';
     jopt.folder_out = [opt.folder_out 'registration' filesep];
     pipeline = psom_add_job(pipeline,['bold_nuc_' list_subject{ss}],'niak_brick_nu_correct',jin,jout,jopt);
-    pipeline = psom_add_clean(pipeline,['clean_bold_nuc_' list_subject{ss}],jout);
+    pipeline = psom_add_clean(pipeline,['clean_bold_nuc_' list_subject{ss}],...
+                              pipeline.(['bold_nuc_' list_subject{ss}]).files_out);
 end
 
 % Invert indiviual BOLD color contrast
@@ -276,7 +288,7 @@ end
 % Individual BOLD montage
 clear jin jout jopt
 jin.target = in.template.anat;
-jopt.coord = opt.coord;
+jopt.coord = opt.coord_func;
 jopt.colormap = 'gray';
 jopt.limits = 'adaptative';
 jopt.method = 'linear';
@@ -315,7 +327,7 @@ end
 % Individual T1-backgroud montage images
 clear jin jout jopt
 jin.target = in.template.anat;
-jopt.coord = opt.coord;
+jopt.coord = opt.coord_func;
 jopt.colormap = 'gray';
 jopt.limits = 'adaptative';
 jopt.method = 'linear';
