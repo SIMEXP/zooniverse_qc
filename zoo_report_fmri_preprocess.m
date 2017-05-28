@@ -40,6 +40,7 @@ function pipeline = zoo_report_fmri_preprocess(in,opt)
 %   TYPE_OUTLINE (string, default 'sym') what type of registration landmarks to use (either
 %     'sym' for symmetrical templates or 'asym' for asymmetrical templates).
 %   PSOM (structure) options for PSOM. See PSOM_RUN_PIPELINE.
+%   INVERT_CONTRAST (structure) option for zoo_brick_invert_contrast fonction.
 %   FLAG_VERBOSE (boolean, default true) if true, verbose on progress.
 %   FLAG_TEST (boolean, default false) if the flag is true, the pipeline will
 %     be generated but no processing will occur.
@@ -88,8 +89,8 @@ in.ind = psom_struct_defaults( in.ind , ...
     { NaN    , NaN    });
 
 in.group = psom_struct_defaults( in.group , ...
-    {  'mask_func_group' , 'avg_mask_func'}, ...
-    {  NaN               , NaN            });
+    {  'mask_func_group' , 'avg_mask_func' ,  'mask_anat_group' }, ...
+    {  NaN               , NaN             ,  ''                });
 
 in.template = psom_struct_defaults( in.template , ...
     { 'anat' , 'anat_outline' , 'func_outline'}, ...
@@ -122,13 +123,19 @@ coord_def_func =[-50 , -57 , 5 ;
                 30 ,  45 ,  58];
 
 opt = psom_struct_defaults ( opt , ...
-    { 'type_outline' , 'folder_out' , 'coord_anat'   , 'coord_func'   , 'flag_test' , 'psom'   , 'flag_verbose' }, ...
-    { 'sym'          , pwd          , coord_def_anat , coord_def_func , false       , struct() , true           });
+    { 'type_outline' , 'folder_out' , 'coord_anat'   , 'coord_func'   , 'flag_test' , 'psom'    , 'invert_contrast' , 'flag_verbose' }, ...
+    { 'sym'          , pwd          , coord_def_anat , coord_def_func , false       ,  struct() , struct()          , true           });
 
 if isempty(in.template.anat)
   in.template.anat = [ GB_NIAK.path_template ...
   'mni-models_icbm152-nl-2009-1.0/mni_icbm152_t1_tal_nlin_' opt.type_outline '_09a.mnc.gz'];
 end
+
+if isempty(in.group.mask_anat_group)
+  in.group.mask_anat_group = [ GB_NIAK.path_template ...
+  'mni-models_icbm152-nl-2009-1.0/mni_icbm152_t1_tal_nlin_' opt.type_outline '_09a_mask.mnc.gz'];
+end
+
 
 opt.folder_out = niak_full_path(opt.folder_out);
 opt.psom.path_logs = [opt.folder_out 'logs' filesep];
@@ -280,6 +287,7 @@ for ss = 1:length(list_subject)
     clear jin jout jopt
     jin.source = pipeline.(['bold_nuc_' list_subject{ss}]).files_out.vol_nu;
     jout = [opt.folder_out 'registration' filesep list_subject{ss} '_func_vol_inv.nii.gz'];
+    jopt = opt.invert_contrast;
     jopt.only_mask = false;
     pipeline = psom_add_job(pipeline,['bold_inv_' list_subject{ss}],'zoo_brick_invert_contrast',jin,jout,jopt);
     pipeline = psom_add_clean(pipeline,['clean_bold_inv_' list_subject{ss}],jout);
@@ -314,48 +322,72 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%% transform indiviual T1 into backgroud image for BOLD registration %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Mask indiviual T1 background
-for ss = 1:length(list_subject)
-    clear jin jout jopt
-    jin.source =in.ind.anat.(list_subject{ss});
-    jout = [opt.folder_out 'registration' filesep list_subject{ss} '_anat_mask_brain.nii.gz'];
-    jopt.only_mask = true;
-    pipeline = psom_add_job(pipeline,['anat_mask_back_' list_subject{ss}],'zoo_brick_invert_contrast',jin,jout,jopt);
-    pipeline = psom_add_clean(pipeline,['clean_anat_mask_back_' list_subject{ss}],jout);
-end
 
-% Individual T1-backgroud montage images
+% invert group anat mask: create inverted brain aanat mask (0:inside brain, 1:outside brain)
+clear jin jout jopt
+command = '[hdr,mask] = niak_read_vol(files_in);mask_anat = niak_smooth_vol(mask);hdr.file_name = files_out;niak_write_vol(hdr,1-mask_anat);';
+pipeline.invert_anat_mask.command      = command;
+pipeline.invert_anat_mask.files_in     = in.group.mask_anat_group;
+pipeline.invert_anat_mask.files_out    = [opt.folder_out 'group' filesep 'anat_group_mask_' opt.type_outline '.nii.gz'];
+pipeline = psom_add_clean(pipeline,'clean_invert_anat_mask',pipeline.invert_anat_mask.files_out);
+
+%% montage inverted mask: Create montage from the inverted anat mask
+clear jin jout jopt
+jin.target = in.template.anat;
+jin.source = pipeline.invert_anat_mask.files_out;
+jout = [opt.folder_out 'group' filesep 'anat_mask_inverted_montage.png'];
+jopt.coord = opt.coord_func;
+jopt.colormap = 'gray';
+jopt.colorbar = false;
+jopt.limits = [0 1];
+jopt.padding = Inf;
+jopt.flag_decoration = false;
+pipeline = psom_add_job(pipeline,'montage_inverted_anat_mask','niak_brick_vol2img',jin,jout,jopt);
+
+% Individual T1 montage: create temporary anat montage images for functional workflow
 clear jin jout jopt
 jin.target = in.template.anat;
 jopt.coord = opt.coord_func;
 jopt.colormap = 'gray';
 jopt.limits = 'adaptative';
 jopt.method = 'linear';
-jopt.padding =Inf;
 for ss = 1:length(list_subject)
-    jin.source = pipeline.(['anat_mask_back_' list_subject{ss}]).files_out;
-    jout = [opt.folder_out 'registration' filesep list_subject{ss} '_anat_back_raw.png'];
+    jin.source = in.ind.anat.(list_subject{ss});
+    jout = [opt.folder_out 'registration' filesep list_subject{ss} '_anat_func_raw.png'];
     jopt.flag_decoration = false;
-    pipeline = psom_add_job(pipeline,['t1_back_raw_montage_' list_subject{ss}],'niak_brick_vol2img',jin,jout,jopt);
-    pipeline = psom_add_clean(pipeline,['clean_t1_back_raw_montage_' list_subject{ss}],jout);
+    pipeline = psom_add_job(pipeline,['t1_func_raw_montage_' list_subject{ss}],'niak_brick_vol2img',jin,jout,jopt);
+    pipeline = psom_add_clean(pipeline,['clean_t1_func_raw_montage_' list_subject{ss}],jout);
 end
 
-% Merge individual  T1-backgroud montage and func-outline
+% mask backgroud (white backgroud) : Merge individual anat montage and inverted mask
+clear jin jout jopt
+jin.overlay = pipeline.montage_inverted_anat_mask.files_out;
+jopt.transparency = 0;
+jopt.threshold = 0.4;
+for ss = 1:length(list_subject)
+    jin.background = pipeline.(['t1_func_raw_montage_' list_subject{ss}]).files_out;
+    jout = [opt.folder_out 'registration' filesep list_subject{ss} '_anat_back_raw.png'];
+    pipeline = psom_add_job(pipeline,['t1_back_' list_subject{ss} '_overlay'],'niak_brick_add_overlay',jin,jout,jopt);
+    pipeline = psom_add_clean(pipeline,['clean_t1_back_' list_subject{ss} '_overlay'],jout);
+end
+
+% Make fe final backgroud image for functional workflow: Merge masked individual anat montage images and func-outline
 clear jin jout jopt
 jin.overlay = pipeline.montage_func_outline.files_out;
 jopt.transparency = 0.7;
 jopt.threshold = 0.9;
 for ss = 1:length(list_subject)
-    jin.background = pipeline.(['t1_back_raw_montage_' list_subject{ss}]).files_out;
+    jin.background = pipeline.(['t1_back_' list_subject{ss} '_overlay']).files_out;
     jout = [opt.folder_out 'registration' filesep list_subject{ss} '_anat_back.png'];
-    pipeline = psom_add_job(pipeline,['t1_back_' list_subject{ss} '_overlay'],'niak_brick_add_overlay',jin,jout,jopt);
+    pipeline = psom_add_job(pipeline,['t1_back_' list_subject{ss} '_outline'],'niak_brick_add_overlay',jin,jout,jopt);
 end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Add a spreadsheet to write the QC.
 clear jin jout jopt
-jout = [opt.folder_out 'qc_registration.csv'];
+jout = [opt.folder_out 'group' filesep 'qc_registration.csv'];
 jopt.list_subject = list_subject;
 pipeline = psom_add_job(pipeline,'init_report','niak_brick_init_qc_report','',jout,jopt);
 

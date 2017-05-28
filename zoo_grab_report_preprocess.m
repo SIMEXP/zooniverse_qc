@@ -58,8 +58,8 @@ end
 %% Group-level results
 files.group.avg_mask_func     = files_all.quality_control.group_coregistration.func.mask_average;
 files.group.mask_func_group   = files_all.quality_control.group_coregistration.func.mask_group;
-% files.group.summary_func      = files_all.quality_control.group_coregistration.func.csv;
-% files.group.summary_anat      = files_all.quality_control.group_coregistration.anat.stereonl.csv;
+files.group.avg_mask_anat     = files_all.quality_control.group_coregistration.anat.mask_average;
+files.group.mask_anat_group   = files_all.quality_control.group_coregistration.anat.mask_group;
 
 %% Individual results
 [fmri_c,labels] = niak_fmri2cell(files_all.resample.fmri);
