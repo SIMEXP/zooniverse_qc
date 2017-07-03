@@ -85,12 +85,18 @@ case 'func'
   end
   [hdr,avg_mask_bold] = niak_read_vol(tmp_file_reshape);
   [hdr,mask_t1] = niak_read_vol(in.mask_anat);
+  %% Create temporary anat outline
+  vol_e = niak_morph (mask_t1,'-successive EEEE');
+  vol_d = niak_morph (mask_t1,'-successive DDDD');
+  vol_f = vol_d & ~vol_e;
 
   %% Create func brain borders
   mask_t1_d = niak_morph(mask_t1,'-successive DDD');
   bold_in = avg_mask_bold > opt.thick_border;
   bold_outline = ~bold_in&mask_t1_d;
-  outline  = bold_outline;
+
+  %% merge both outlines
+  outline  = bold_outline|vol_f;
 
 case 'anat'
   %% Create anat brain borders
