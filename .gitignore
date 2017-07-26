@@ -1,6 +1,7 @@
 *.m~
 octave-workspace
 .ipynb_checkpoints/
-template_layout
+template_layout/
+font/
 .ipython
 .local/
