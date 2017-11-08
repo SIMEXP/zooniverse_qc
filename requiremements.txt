@@ -1,0 +1,7 @@
+matplotlib==2.1.0
+numpy==1.13.3
+pandas==0.20.3
+scipy==0.19.1
+seaborn==0.8.1
+jsonschema==2.6.0
+simplejson==3.12.0
